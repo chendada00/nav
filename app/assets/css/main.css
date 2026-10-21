@@ -13,37 +13,39 @@
 }
 
 :root {
-  --site-font: "DingTalk Sans", "PingFang SC",
-    "Microsoft YaHei", Arial, sans-serif;
-
-  --nav-accent: #7c3aed;
-  --nav-accent-hover: #6d28d9;
-  --nav-blue: #3b82f6;
-
-  --nav-motion: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* 比上一版稍深的浅色卡片与阴影 */
-  --nav-card-bg: rgba(255, 255, 255, 0.88);
-  --nav-card-border: rgba(124, 58, 237, 0.20);
+  --nav-card-bg: rgba(255, 255, 255, 0.58);
+  --nav-card-border: rgba(124, 58, 237, 0.18);
   --nav-card-shadow:
-    0 3px 10px rgba(31, 41, 55, 0.045),
-    0 10px 24px rgba(109, 40, 217, 0.045);
+    0 2px 8px rgba(31, 41, 55, 0.025),
+    0 6px 18px rgba(109, 40, 217, 0.045);
 
-  --scrollbar-bg: rgba(0, 0, 0, 0.15);
-  --scrollbar-hover: rgba(0, 0, 0, 0.28);
+  --nav-card-blur: 18px;
+  --nav-card-saturation: 135%;
+
+  /* 悬停时只轻微提亮 */
+  --nav-card-hover-bg: rgba(255, 255, 255, 0.32);
+  --nav-card-hover-border: rgba(139, 92, 246, 0.42);
+  --nav-card-hover-shadow:
+    0 5px 16px rgba(91, 60, 160, 0.08),
+    0 1px 4px rgba(91, 60, 160, 0.035);
 }
 
 html.dark {
-  --nav-card-bg: rgba(26, 25, 42, 0.90);
-  --nav-card-border: rgba(167, 139, 250, 0.24);
+  --nav-card-bg: rgba(26, 25, 42, 0.62);
+  --nav-card-border: rgba(167, 139, 250, 0.22);
   --nav-card-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.20),
-    0 12px 30px rgba(0, 0, 0, 0.15);
+    0 3px 10px rgba(0, 0, 0, 0.13),
+    0 7px 20px rgba(0, 0, 0, 0.08);
 
-  --scrollbar-bg: rgba(255, 255, 255, 0.32);
-  --scrollbar-hover: rgba(255, 255, 255, 0.48);
+  --nav-card-blur: 20px;
+  --nav-card-saturation: 125%;
+
+  --nav-card-hover-bg: rgba(45, 40, 60, 0.45);
+  --nav-card-hover-border: rgba(167, 139, 250, 0.40);
+  --nav-card-hover-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.18),
+    0 8px 20px rgba(109, 40, 217, 0.09);
 }
-
 html,
 body {
   font-family: var(--site-font);
@@ -395,125 +397,147 @@ html.dark .category-heading:hover .category-chevron {
    更明显的悬停位移、渐变边框和高光扫过
    ========================================= */
 
+
 .nav-card.card-base {
   position: relative;
   isolation: isolate;
   overflow: hidden;
 
   min-width: 0;
-  padding: 18px;
+  min-height: 0;
+  padding: 16px;
 
   border: 1px solid var(--nav-card-border);
-  border-radius: 17px;
+  border-radius: 18px;
 
   background: var(--nav-card-bg);
-  box-shadow: var(--nav-card-shadow);
 
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter:
+    blur(var(--nav-card-blur))
+    saturate(var(--nav-card-saturation));
+  backdrop-filter:
+    blur(var(--nav-card-blur))
+    saturate(var(--nav-card-saturation));
+
+  box-shadow:
+    var(--nav-card-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
 
   transform: translate3d(0, 0, 0);
 
   transition:
-    transform 480ms var(--nav-motion),
-    box-shadow 480ms var(--nav-motion),
-    background-color 420ms ease,
-    border-color 420ms ease;
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease;
 }
 
-/* 渐变描边：只控制透明度，不再使用旧 clip-path 动画 */
+html.dark .nav-card.card-base {
+  box-shadow:
+    var(--nav-card-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+/* 渐变描边：只显示在边框，不覆盖卡片内容 */
 .nav-card.card-base::after {
   content: "";
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   inset: 0;
 
-  padding: 1.4px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
   border-radius: inherit;
+
   pointer-events: none;
 
-  background: linear-gradient(
-    120deg,
-    #8b5cf6 0%,
-    #6366f1 36%,
-    #3b82f6 68%,
-    #06b6d4 100%
-  );
-
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  background:
+    linear-gradient(
+      transparent,
+      transparent
+    ) padding-box,
+    linear-gradient(
+      125deg,
+      rgba(139, 92, 246, 0.68),
+      rgba(99, 102, 241, 0.48) 45%,
+      rgba(59, 130, 246, 0.48) 75%,
+      rgba(6, 182, 212, 0.36)
+    ) border-box;
 
   opacity: 0;
-  transition: opacity 420ms ease;
+
+  transition: opacity 240ms ease;
 }
 
-/* 卡片表面扫过的柔和高光 */
+/* 柔和扫光：降低亮度与覆盖面积 */
 .nav-card.card-base::before {
   content: "";
   position: absolute;
   z-index: 0;
 
-  top: -15%;
-  bottom: -15%;
-  left: -145%;
-
-  width: 78%;
+  top: 0;
+  bottom: 0;
+  left: -100%;
+  width: 55%;
 
   pointer-events: none;
 
   background: linear-gradient(
     105deg,
     transparent 0%,
-    rgba(139, 92, 246, 0.055) 35%,
-    rgba(255, 255, 255, 0.48) 50%,
-    rgba(59, 130, 246, 0.075) 65%,
+    rgba(139, 92, 246, 0.012) 35%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(59, 130, 246, 0.012) 65%,
     transparent 100%
   );
 
   transform: skewX(-13deg);
-  transition: left 850ms var(--nav-motion);
+  transition: left 600ms ease;
 }
 
 html.dark .nav-card.card-base::before {
   background: linear-gradient(
     105deg,
     transparent 0%,
-    rgba(139, 92, 246, 0.12) 35%,
-    rgba(221, 214, 254, 0.085) 50%,
-    rgba(59, 130, 246, 0.12) 65%,
+    rgba(139, 92, 246, 0.02) 35%,
+    rgba(221, 214, 254, 0.025) 50%,
+    rgba(59, 130, 246, 0.02) 65%,
     transparent 100%
   );
 }
 
-/* 卡片内容位于高光上方 */
+/* 内容保持在扫光层和描边层之上 */
 .nav-card.card-base > * {
   position: relative;
   z-index: 1;
 }
 
-/* 桌面设备才使用悬停位移，避免触屏设备状态粘住 */
+/* 右上角标签保留绝对定位 */
+.nav-card.card-base > .absolute {
+  position: absolute;
+  z-index: 4;
+  top: 0.5rem;
+  right: 0.5rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+
+  pointer-events: none;
+}
+
+.nav-card.card-base > .absolute > * {
+  flex: 0 0 auto;
+}
+
+/* 桌面端悬停效果 */
 @media (hover: hover) and (pointer: fine) {
   .nav-card.card-base:hover {
-    transform: translate3d(0, -7px, 0);
-
-    border-color: rgba(124, 58, 237, 0.48);
-
-    box-shadow:
-      0 10px 20px rgba(31, 41, 55, 0.075),
-      0 22px 42px rgba(109, 40, 217, 0.14),
-      0 5px 12px rgba(59, 130, 246, 0.075);
-  }
-
-  html.dark .nav-card.card-base:hover {
-    border-color: rgba(167, 139, 250, 0.55);
-
-    box-shadow:
-      0 10px 24px rgba(0, 0, 0, 0.26),
-      0 22px 44px rgba(109, 40, 217, 0.22),
-      0 5px 12px rgba(59, 130, 246, 0.10);
+    background: var(--nav-card-hover-bg);
+    border-color: var(--nav-card-hover-border);
+    box-shadow: var(--nav-card-hover-shadow);
+    transform: translateY(-2px);
   }
 
   .nav-card.card-base:hover::after {
@@ -521,44 +545,71 @@ html.dark .nav-card.card-base::before {
   }
 
   .nav-card.card-base:hover::before {
-    left: 155%;
+    left: 145%;
+  }
+
+  /* 站点名称只轻微变色 */
+  .nav-card.card-base:hover .nav-card-title {
+    color: #7c3aed;
+  }
+
+  html.dark .nav-card.card-base:hover .nav-card-title {
+    color: #c4b5fd;
+  }
+
+  /* 图标只做非常轻微的缩放 */
+  .nav-card.card-base img {
+    transition: transform 240ms ease;
+  }
+
+  .nav-card.card-base:hover img {
+    transform: scale(1.025);
   }
 }
 
+/* 点击反馈 */
 .nav-card.card-base:active {
-  transform: translate3d(0, -1px, 0) scale(0.995);
-  transition-duration: 120ms;
+  transform: translateY(-1px) scale(0.998);
+  transition-duration: 100ms;
 }
 
-/* 站点名称颜色变化 */
+/* 站点名称 */
 .nav-card .nav-card-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  transition: color 380ms ease;
+  transition: color 240ms ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .nav-card:hover .nav-card-title {
-    color: #6d28d9;
+/* 触屏设备不保留悬停动画 */
+@media (hover: none), (pointer: coarse) {
+  .nav-card.card-base::before {
+    display: none;
   }
 
-  html.dark .nav-card:hover .nav-card-title {
-    color: #cbbaff;
-  }
-
-  /* SiteImage 若内部输出 img，则提供轻微缩放 */
-  .nav-card img {
-    transition:
-      transform 480ms var(--nav-motion),
-      filter 420ms ease;
-  }
-
-  .nav-card:hover img {
-    transform: scale(1.055);
+  .nav-card.card-base:hover {
+    transform: none;
   }
 }
+
+/* 减少动态效果 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-card.card-base,
+  .nav-card.card-base::before,
+  .nav-card.card-base::after,
+  .nav-card.card-base img,
+  .nav-card .nav-card-title {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .nav-card.card-base:hover,
+  .nav-card.card-base:active {
+    transform: none !important;
+  }
+}
+  
 
 /* =========================================
    7. 顶部导航与页脚
@@ -862,6 +913,7 @@ html.dark .site-footer-inner > div:last-child strong {
   width: 100%;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .site-desc-text {
@@ -874,40 +926,66 @@ html.dark .site-footer-inner > div:last-child strong {
   color: #6b7280;
   font-size: 12px;
   line-height: 1.6;
+
+  transform: translate3d(0, 0, 0);
 }
 
+
 html.dark .site-desc-text {
-  color: #9ca3af;
+  color: #a5a1b5;
 }
 
 /* 只有鼠标悬停设备才播放滚动动画 */
 @media (hover: hover) and (pointer: fine) {
-  .nav-card:hover .site-desc-wrap.is-overflowing .site-desc-text {
+  .nav-card:hover
+    .site-desc-wrap.is-overflowing
+    .site-desc-text {
     width: max-content;
     max-width: none;
     overflow: visible;
     text-overflow: clip;
 
-    animation: site-desc-marquee 4s ease-in-out 0.35s infinite alternate;
+    animation:
+      site-desc-marquee
+      var(--desc-scroll-duration, 2s)
+      linear
+      0.15s
+      infinite
+      alternate;
+
     will-change: transform;
   }
 }
 
 @keyframes site-desc-marquee {
-  0%,
-  12% {
-    transform: translateX(0);
+  from {
+    transform: translate3d(0, 0, 0);
   }
 
-  88%,
-  100% {
-    transform: translateX(calc(-1 * var(--desc-scroll-distance)));
+  to {
+    transform: translate3d(
+      calc(-1 * var(--desc-scroll-distance, 0px)),
+      0,
+      0
+    );
+  }
+}
+
+/* 触屏设备不触发悬停滚动 */
+@media (hover: none), (pointer: coarse) {
+  .site-desc-text {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: none;
   }
 }
 
 /* 尊重系统的减少动态效果设置 */
 @media (prefers-reduced-motion: reduce) {
-  .nav-card:hover .site-desc-wrap.is-overflowing .site-desc-text {
+  .nav-card:hover
+    .site-desc-wrap.is-overflowing
+    .site-desc-text {
     width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;

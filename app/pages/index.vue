@@ -115,6 +115,7 @@
                     class="site-desc-text"
                     :style="{
                       '--desc-scroll-distance': `${descriptionOverflow[child.id] || 0}px`,
+                      '--desc-scroll-duration': `${getDescriptionDuration(child.id)}s`,
                     }"
                   >
                     {{ child.desc || "" }}
@@ -202,10 +203,10 @@ const {
 
 
 // 网站描述的 DOM 引用与溢出距离
-const descriptionOverflow = ref<Record<number, number>>({});
+const descriptionOverflow = ref<Record<string, number>>({});
 
 const descriptionElements = new Map<
-  number,
+  string,
   { wrapper: HTMLElement; text: HTMLElement }
 >();
 
@@ -244,6 +245,15 @@ const registerDescription = (
   descriptionObserver?.observe(el);
 
   void nextTick(() => measureDescription(id));
+};
+
+// 描述滚动速度：每秒约 100px，限制单程时长
+const getDescriptionDuration = (id: string | number) => {
+  const distance = descriptionOverflow.value[id] || 0;
+
+  if (distance <= 1) return 0;
+
+  return Math.min(5, Math.max(1.2, distance / 100));
 };
 
 // 精确计算文字超出容器的距离
