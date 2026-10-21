@@ -35,11 +35,62 @@ useHead({
   inset: 0;
   z-index: -1;
   pointer-events: none;
+
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--ui-border) 28%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--ui-border) 28%, transparent) 1px, transparent 1px);
-  background-size: 40px 40px;
-  opacity: 0.22;
+    radial-gradient(
+      ellipse at 10% 5%,
+      rgba(139, 92, 246, 0.10),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 90% 20%,
+      rgba(59, 130, 246, 0.08),
+      transparent 36%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ui-border) 25%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ui-border) 25%, transparent) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    40px 40px,
+    40px 40px;
+
+  opacity: 0.85;
+  transition: opacity 400ms ease;
+}
+
+
+html.dark .site-background {
+  background-image:
+    radial-gradient(
+      ellipse at 10% 5%,
+      rgba(139, 92, 246, 0.13),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 90% 20%,
+      rgba(59, 130, 246, 0.10),
+      transparent 36%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ui-border) 22%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ui-border) 22%, transparent) 1px,
+      transparent 1px
+    );
 }
 @media (prefers-reduced-motion: reduce) {
   .page-enter-active,

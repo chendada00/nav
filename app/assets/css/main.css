@@ -168,3 +168,595 @@ html.dark .category-title {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+/* =========================================
+   伴随导航 · UI Refresh
+   柔和彩色玻璃感 / 细腻交互 / 主题适配
+   ========================================= */
+
+/* 1. 全局视觉变量 */
+:root {
+  --nav-accent: #8b5cf6;
+  --nav-accent-rgb: 139, 92, 246;
+  --nav-blue: #3b82f6;
+  --nav-cyan: #06b6d4;
+
+  --nav-card-bg: rgba(255, 255, 255, 0.78);
+  --nav-card-border: rgba(139, 92, 246, 0.17);
+  --nav-card-shadow:
+    0 3px 12px rgba(31, 41, 55, 0.035),
+    0 12px 30px rgba(109, 40, 217, 0.035);
+
+  --nav-motion: cubic-bezier(0.22, 1, 0.36, 1);
+  --nav-duration: 320ms;
+}
+
+html.dark {
+  --nav-card-bg: rgba(24, 24, 39, 0.78);
+  --nav-card-border: rgba(167, 139, 250, 0.19);
+  --nav-card-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.13),
+    0 12px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* 2. 柔和的背景光晕 + 原有网格 */
+.site-background {
+  background-image:
+    radial-gradient(
+      ellipse at 8% 5%,
+      rgba(139, 92, 246, 0.105),
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at 92% 18%,
+      rgba(59, 130, 246, 0.085),
+      transparent 34%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ui-border) 25%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ui-border) 25%, transparent) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    40px 40px,
+    40px 40px;
+
+  opacity: 0.85;
+  transition: opacity 400ms ease;
+}
+
+html.dark .site-background {
+  background-image:
+    radial-gradient(
+      ellipse at 8% 5%,
+      rgba(139, 92, 246, 0.14),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 92% 18%,
+      rgba(59, 130, 246, 0.10),
+      transparent 36%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ui-border) 22%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ui-border) 22%, transparent) 1px,
+      transparent 1px
+    );
+}
+
+/* 3. 分类标题 */
+.category-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 12px;
+  padding: 5px 8px 5px 5px;
+
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  border-radius: 12px;
+  isolation: isolate;
+
+  transition:
+    background-color 260ms ease,
+    transform 320ms var(--nav-motion);
+}
+
+.category-heading::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(139, 92, 246, 0.055),
+      rgba(59, 130, 246, 0.025) 55%,
+      transparent
+    ) padding-box,
+    linear-gradient(
+      100deg,
+      rgba(139, 92, 246, 0.15),
+      rgba(59, 130, 246, 0.08),
+      transparent 80%
+    ) border-box;
+
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.category-heading:hover::before {
+  opacity: 1;
+}
+
+.category-heading:active {
+  transform: scale(0.995);
+}
+
+/* 分类图标的渐变底板 */
+.category-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(139, 92, 246, 0.13);
+  border-radius: 12px;
+
+  color: #7c3aed;
+  background: linear-gradient(
+    145deg,
+    rgba(237, 233, 254, 0.96),
+    rgba(219, 234, 254, 0.88)
+  );
+
+  box-shadow: 0 2px 7px rgba(109, 40, 217, 0.045);
+
+  transition:
+    transform 360ms var(--nav-motion),
+    border-radius 300ms ease,
+    box-shadow 300ms ease,
+    background 300ms ease;
+}
+
+html.dark .category-icon-wrap {
+  color: #c4b5fd;
+  background: linear-gradient(
+    145deg,
+    rgba(109, 40, 217, 0.23),
+    rgba(59, 130, 246, 0.16)
+  );
+  border-color: rgba(167, 139, 250, 0.17);
+}
+
+.category-heading:hover .category-icon-wrap {
+  transform: translateY(-2px) rotate(-4deg);
+  border-radius: 14px;
+  box-shadow: 0 5px 14px rgba(109, 40, 217, 0.14);
+}
+
+/* 分类文字 */
+.category-heading .category-title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+
+  color: #37304f;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
+
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+  -webkit-animation: none;
+  animation: none;
+
+  transition: color 240ms ease;
+}
+
+html.dark .category-heading .category-title {
+  color: #ece8ff;
+}
+
+.category-heading:hover .category-title {
+  color: #7c3aed;
+}
+
+html.dark .category-heading:hover .category-title {
+  color: #c4b5fd;
+}
+
+/* 分类站点数量 */
+.category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 23px;
+  height: 22px;
+  padding: 0 7px;
+
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.09);
+  border: 1px solid rgba(139, 92, 246, 0.11);
+  border-radius: 7px;
+
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  transition:
+    background 250ms ease,
+    transform 300ms var(--nav-motion);
+}
+
+html.dark .category-count {
+  color: #c4b5fd;
+  background: rgba(167, 139, 250, 0.11);
+  border-color: rgba(167, 139, 250, 0.12);
+}
+
+.category-heading:hover .category-count {
+  transform: translateY(-1px);
+  background: rgba(139, 92, 246, 0.14);
+}
+
+/* 分类标题延伸线 */
+.category-divider {
+  flex: 1;
+  min-width: 12px;
+  height: 1px;
+  margin-left: 4px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.26),
+    rgba(59, 130, 246, 0.12) 45%,
+    transparent
+  );
+
+  transform-origin: left center;
+  transition:
+    height 250ms ease,
+    opacity 250ms ease;
+}
+
+.category-heading:hover .category-divider {
+  height: 2px;
+}
+
+/* 分类展开 / 折叠箭头 */
+.category-chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  color: #8b7cae;
+  border-radius: 9px;
+
+  transition:
+    transform 340ms var(--nav-motion),
+    color 250ms ease,
+    background 250ms ease;
+}
+
+.category-heading:hover .category-chevron {
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.category-heading.is-collapsed .category-chevron {
+  transform: rotate(-90deg);
+}
+
+/* 4. 网站卡片：渐变边框 + 轻盈玻璃感 */
+.nav-card.card-base {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  padding: 18px;
+  border: 1px solid var(--nav-card-border);
+  border-radius: 17px;
+
+  background: var(--nav-card-bg);
+  box-shadow: var(--nav-card-shadow);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  transform: translate3d(0, 0, 0);
+
+  transition:
+    transform 360ms var(--nav-motion),
+    box-shadow 360ms var(--nav-motion),
+    background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+/* 不再使用旧的 clip-path 描边动画 */
+.nav-card.card-base::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 1.2px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background: linear-gradient(
+    125deg,
+    rgba(139, 92, 246, 0.9),
+    rgba(59, 130, 246, 0.58) 48%,
+    rgba(6, 182, 212, 0.75)
+  );
+
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+/* 卡片表面的柔和高光 */
+.nav-card.card-base::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -130%;
+  z-index: 0;
+
+  width: 70%;
+  height: 100%;
+
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(139, 92, 246, 0.045) 40%,
+    rgba(255, 255, 255, 0.30) 50%,
+    rgba(59, 130, 246, 0.045) 60%,
+    transparent
+  );
+
+  transform: skewX(-12deg);
+  transition: left 680ms var(--nav-motion);
+}
+
+html.dark .nav-card.card-base::before {
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(139, 92, 246, 0.075) 42%,
+    rgba(255, 255, 255, 0.045) 50%,
+    rgba(59, 130, 246, 0.07) 58%,
+    transparent
+  );
+}
+
+/* 卡片悬停反馈 */
+@media (hover: hover) and (pointer: fine) {
+  .nav-card.card-base:hover {
+    transform: translate3d(0, -5px, 0);
+
+    border-color: rgba(139, 92, 246, 0.24);
+
+    box-shadow:
+      0 8px 18px rgba(31, 41, 55, 0.055),
+      0 18px 36px rgba(109, 40, 217, 0.095),
+      0 3px 8px rgba(59, 130, 246, 0.035);
+  }
+
+  html.dark .nav-card.card-base:hover {
+    border-color: rgba(167, 139, 250, 0.34);
+
+    box-shadow:
+      0 8px 22px rgba(0, 0, 0, 0.20),
+      0 18px 40px rgba(109, 40, 217, 0.12),
+      0 3px 10px rgba(59, 130, 246, 0.055);
+  }
+
+  .nav-card.card-base:hover::after {
+    opacity: 1;
+  }
+
+  .nav-card.card-base:hover::before {
+    left: 150%;
+  }
+}
+
+.nav-card.card-base:active {
+  transform: translate3d(0, -1px, 0) scale(0.995);
+  transition-duration: 100ms;
+}
+
+/* 保证卡片内容始终位于高光层上方 */
+.nav-card.card-base > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 卡片标题的颜色反馈 */
+.nav-card .text-lg.font-semibold {
+  transition: color 250ms ease;
+}
+
+.nav-card:hover .text-lg.font-semibold {
+  color: #7c3aed;
+}
+
+html.dark .nav-card:hover .text-lg.font-semibold {
+  color: #c4b5fd;
+}
+
+/* 站点图标轻微浮动，不改变布局 */
+.nav-card img {
+  transition:
+    transform 360ms var(--nav-motion),
+    filter 300ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card:hover img {
+    transform: scale(1.055);
+  }
+}
+
+/* 5. 头部导航：轻微玻璃质感 */
+header.sticky {
+  background: rgba(255, 255, 255, 0.70);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.09);
+  box-shadow: 0 4px 18px rgba(31, 41, 55, 0.025);
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+html.dark header.sticky {
+  background: rgba(18, 18, 30, 0.78);
+  border-bottom-color: rgba(167, 139, 250, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+}
+
+/* 6. 页脚：保持原有布局，只增强品牌色 */
+footer a,
+footer span {
+  transition: color 220ms ease;
+}
+
+footer > div > div:first-child a {
+  color: #7c3aed;
+  text-decoration-color: rgba(124, 58, 237, 0.25);
+  text-underline-offset: 3px;
+}
+
+footer > div > div:first-child a:hover {
+  color: #6d28d9;
+  text-decoration: underline;
+}
+
+html.dark footer > div > div:first-child a {
+  color: #c4b5fd;
+}
+
+html.dark footer > div > div:first-child a:hover {
+  color: #ddd6fe;
+}
+
+/* 7. 无障碍：尊重用户的减少动态效果设置 */
+@media (prefers-reduced-motion: reduce) {
+  .category-heading,
+  .category-icon-wrap,
+  .category-count,
+  .category-divider,
+  .category-chevron,
+  .nav-card.card-base,
+  .nav-card.card-base::before,
+  .nav-card.card-base::after,
+  .nav-card img {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .nav-card.card-base:hover,
+  .nav-card.card-base:active,
+  .category-heading:active {
+    transform: none !important;
+  }
+}
+
+/* 8. 移动端适配 */
+@media (max-width: 640px) {
+  .category-heading {
+    min-height: 44px;
+    gap: 9px;
+    margin-bottom: 10px;
+  }
+
+  .category-icon-wrap {
+    width: 35px;
+    height: 35px;
+    border-radius: 11px;
+  }
+
+  .category-heading .category-title {
+    font-size: 16px;
+  }
+
+  .nav-card.card-base {
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .nav-card.card-base::before {
+    display: none;
+  }
+}
+
+/* 覆盖旧版分类标题的高优先级样式 */
+html.light .category-heading .category-title,
+html.dark .category-heading .category-title {
+  padding: 0;
+  margin: 0;
+  background: none;
+  background-clip: initial;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+  animation: none;
+  -webkit-animation: none;
+}
+
+/* 确保分类标题的文字颜色由新主题控制 */
+html.light .category-heading .category-title {
+  color: #37304f;
+}
+
+html.dark .category-heading .category-title {
+  color: #ece8ff;
+}
+
+html.light .category-heading:hover .category-title {
+  color: #7c3aed;
+}
+
+html.dark .category-heading:hover .category-title {
+  color: #c4b5fd;
+}

@@ -7,27 +7,44 @@
       <div v-for="item in categoryList?.data?.list || []" :key="item.id">
 
         <div
-            class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-            @click="toggleCategory(item.id)"
+          class="category-heading group"
+          :class="{ 'is-collapsed': collapsedStates[item.id] }"
+          @click="toggleCategory(item.id)"
         >
-          <UIcon :name="item.icon || 'ri:menu-5-line'" class="!size-6" />
-          <div class="text-xl font-semibold category-title">{{ item.name }}</div>
+          <span class="category-icon-wrap">
+            <UIcon
+              :name="item.icon || 'ri:menu-5-line'"
+              class="category-icon !size-5"
+            />
+          </span>
+
+          <span class="category-title">
+            {{ item.name }}
+          </span>
+
+          <span class="category-count">
+            {{ item.ds_websites?.length || 0 }}
+          </span>
+
+          <span class="category-divider"></span>
+
+          <span class="category-chevron">
+            <UIcon name="lucide:chevron-down" class="!size-4" />
+          </span>
         </div>
 
         <div
 
             v-if="item.ds_websites?.length && !collapsedStates[item.id]"
-            class="grid gap-5 w-full justify-center grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] mt-2"
+            class="grid gap-5 w-full justify-center grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] mt-3"
         >
           <div
               v-for="child in item.ds_websites || []"
               :key="child.id"
           >
             <div
-                class="relative h-full cursor-pointer card-base animated-border animate-fade after:border-green-500/50 dark:after:border-green-400/50 shadow-md dark:shadow-[0_4px_6px_-1px_rgb(255,255,255,0.1)]"
-                shadow="hover"
-                @click="handleClick(child)"
-                @mouseenter="($event.target as HTMLElement)?.classList?.add('hovered')"
+              class="nav-card card-base group relative h-full cursor-pointer"
+              @click="handleClick(child)"
             >
               <div class="flex flex-col gap-3">
                 <div class="flex gap-2 items-center">
