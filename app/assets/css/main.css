@@ -333,7 +333,7 @@ html.dark .category-count {
 
 .category-heading:hover .category-divider {
   height: 2px;
-  opacity: 5;
+  opacity: 1;
   transform: scaleX(1);
 }
 
@@ -683,7 +683,8 @@ html.dark footer > div > div:first-child a:hover {
 .site-footer {
   position: relative;
   z-index: 10;
-  margin-top: 2rem;
+  flex-shrink: 0;
+  margin-top: auto;
   padding: 1rem 1.25rem;
   color: #6b7280;
   background: rgba(248, 247, 253, 0.68);
@@ -791,6 +792,7 @@ html.dark .site-footer-inner > div:last-child strong {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .site-main {
@@ -801,4 +803,57 @@ html.dark .site-footer-inner > div:last-child strong {
 /* 浮动按钮继续固定在视口右下角 */
 .site-layout > .fixed {
   position: fixed;
+}
+
+
+/* 修复：站点卡片内容层级不能覆盖右上角标签的绝对定位 */
+.nav-card.card-base > .absolute {
+  position: absolute;
+  z-index: 4;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+/* 右上角标签不参与卡片内容布局 */
+.nav-card.card-base > .absolute {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  pointer-events: none;
+}
+
+/* 标签本身保持紧凑，不被拉伸 */
+.nav-card.card-base > .absolute > * {
+  flex: 0 0 auto;
+}
+
+/* 内容层级正常，不让标签撑高卡片 */
+.nav-card.card-base > *:not(.absolute) {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* 卡片恢复紧凑间距，避免整体显得臃肿 */
+.nav-card.card-base {
+  padding: 16px;
+}
+
+/* 不强制每张卡片因标签或内容产生额外的最小高度 */
+.site-grid-item,
+.nav-card.card-base {
+  min-height: 0;
+}
+
+/* 描述固定最多两行，避免长描述把卡片撑得过高 */
+.nav-card .line-clamp-2 {
+  line-height: 1.6;
+}
+
+/* 移动端继续保持紧凑 */
+@media (max-width: 640px) {
+  .nav-card.card-base {
+    padding: 14px;
+  }
 }
