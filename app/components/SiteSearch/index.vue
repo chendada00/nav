@@ -76,25 +76,15 @@
                   class="site-search-result"
                   @click="openWebsite(item.website.url)"
                 >
-                  <div
-                    class="site-search-logo"
-                    :style="item.website.color
-                      ? { backgroundColor: item.website.color }
-                      : undefined"
-                  >
-                    <img
-                      v-if="item.website.logo"
-                      :src="item.website.logo"
-                      :alt="`${item.website.name} 图标`"
-                      loading="lazy"
-                      @error="hideBrokenImage"
-                    />
-                    <UIcon
-                      v-else
-                      name="i-lucide-globe"
-                      class="text-xl"
-                    />
+
+                  <div class="site-search-logo">
+                  <SiteImage
+                      :url="item.website.logo"
+                      :color="item.website.color"
+                      :size="40"
+                  />
                   </div>
+
 
                   <div class="site-search-result-content">
                     <div class="site-search-result-title">
@@ -235,10 +225,6 @@ function getHostname(url: string) {
   }
 }
 
-function hideBrokenImage(event: Event) {
-  const img = event.target as HTMLImageElement
-  img.style.display = 'none'
-}
 
 async function openSearch() {
   isOpen.value = true
@@ -418,17 +404,15 @@ onBeforeUnmount(() => {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
-  border: 1px solid rgb(148 163 184 / 20%);
-  border-radius: 12px;
-  background: rgb(148 163 184 / 10%);
+  background: transparent;
 }
 
-.site-search-logo img {
-  width: 100%;
-  height: 100%;
+.site-search-logo :deep(img) {
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
