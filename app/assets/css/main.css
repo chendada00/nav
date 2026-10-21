@@ -407,10 +407,9 @@ html.dark .category-heading:hover .category-chevron {
   min-height: 0;
   padding: 16px;
 
-  border: 1px solid var(--nav-card-border);
-  border-radius: 18px;
 
-  background: var(--nav-card-bg);
+  border-radius: 10px;
+
 
   -webkit-backdrop-filter:
     blur(var(--nav-card-blur))
@@ -425,11 +424,13 @@ html.dark .category-heading:hover .category-chevron {
 
   transform: translate3d(0, 0, 0);
 
+  border: 1px solid var(--nav-card-border);
+  background: var(--nav-card-bg);
+
   transition:
     transform 240ms ease,
     box-shadow 240ms ease,
-    border-color 240ms ease,
-    background-color 240ms ease;
+    border-color 240ms ease;
 }
 
 html.dark .nav-card.card-base {
@@ -438,7 +439,7 @@ html.dark .nav-card.card-base {
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
-/* 渐变描边：只显示在边框，不覆盖卡片内容 */
+/* 悬停渐变边框：只改变边框，不覆盖卡片内容 */
 .nav-card.card-base::after {
   content: "";
   position: absolute;
@@ -446,65 +447,24 @@ html.dark .nav-card.card-base {
   inset: 0;
 
   box-sizing: border-box;
-  border: 1px solid transparent;
+  border: 20px solid transparent;
   border-radius: inherit;
-
   pointer-events: none;
 
   background:
-    linear-gradient(
-      transparent,
-      transparent
-    ) padding-box,
+    linear-gradient(transparent, transparent) padding-box,
     linear-gradient(
       125deg,
-      rgba(139, 92, 246, 0.68),
-      rgba(99, 102, 241, 0.48) 45%,
-      rgba(59, 130, 246, 0.48) 75%,
-      rgba(6, 182, 212, 0.36)
+      rgba(139, 92, 246, 0.25),
+      rgba(99, 102, 241, 0.20) 45%,
+      rgba(59, 130, 246, 0.18) 75%,
+      rgba(6, 182, 212, 0.1)
     ) border-box;
 
   opacity: 0;
-
-  transition: opacity 240ms ease;
+  transition: opacity 440ms ease;
 }
-
-/* 柔和扫光：降低亮度与覆盖面积 */
-.nav-card.card-base::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-
-  top: 0;
-  bottom: 0;
-  left: -100%;
-  width: 55%;
-
-  pointer-events: none;
-
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgba(139, 92, 246, 0.012) 35%,
-    rgba(255, 255, 255, 0.07) 50%,
-    rgba(59, 130, 246, 0.012) 65%,
-    transparent 100%
-  );
-
-  transform: skewX(-13deg);
-  transition: left 600ms ease;
-}
-
-html.dark .nav-card.card-base::before {
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgba(139, 92, 246, 0.02) 35%,
-    rgba(221, 214, 254, 0.025) 50%,
-    rgba(59, 130, 246, 0.02) 65%,
-    transparent 100%
-  );
-}
+ 
 
 /* 内容保持在扫光层和描边层之上 */
 .nav-card.card-base > * {
@@ -531,12 +491,14 @@ html.dark .nav-card.card-base::before {
   flex: 0 0 auto;
 }
 
-/* 桌面端悬停效果 */
+/* 桌面端：不改变底色，只突出边框 */
 @media (hover: hover) and (pointer: fine) {
   .nav-card.card-base:hover {
-    background: var(--nav-card-hover-bg);
-    border-color: var(--nav-card-hover-border);
-    box-shadow: var(--nav-card-hover-shadow);
+    background: var(--nav-card-bg);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow:
+      0 5px 16px rgba(91, 60, 160, 0.09),
+      0 1px 4px rgba(91, 60, 160, 0.04);
     transform: translateY(-2px);
   }
 
@@ -544,11 +506,6 @@ html.dark .nav-card.card-base::before {
     opacity: 1;
   }
 
-  .nav-card.card-base:hover::before {
-    left: 145%;
-  }
-
-  /* 站点名称只轻微变色 */
   .nav-card.card-base:hover .nav-card-title {
     color: #7c3aed;
   }
@@ -557,7 +514,6 @@ html.dark .nav-card.card-base::before {
     color: #c4b5fd;
   }
 
-  /* 图标只做非常轻微的缩放 */
   .nav-card.card-base img {
     transition: transform 240ms ease;
   }
@@ -584,9 +540,6 @@ html.dark .nav-card.card-base::before {
 
 /* 触屏设备不保留悬停动画 */
 @media (hover: none), (pointer: coarse) {
-  .nav-card.card-base::before {
-    display: none;
-  }
 
   .nav-card.card-base:hover {
     transform: none;
