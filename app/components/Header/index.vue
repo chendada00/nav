@@ -7,7 +7,13 @@
     <NuxtLink to="/">
       <div class="flex gap-4 items-center">
         <!-- logo -->
-        <NuxtImg src="/logo.svg" alt="logo" class="w-8 h-8" />
+        <NuxtImg
+          src="/logo.png"
+          alt="伴随の个人导航"
+          width="32"
+          height="32"
+          class="h-8 w-8 shrink-0 object-contain"
+        />
         <SplitText
           :text="$config.public.siteTitle"
           class-name="text-xl !hidden font-semibold md:!block"
