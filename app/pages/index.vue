@@ -105,9 +105,20 @@
                 </div>
 
                 <div
-                  class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-6"
+                  :ref="(el) => registerDescription(el, child.id)"
+                  class="site-desc-wrap"
+                  :class="{
+                    'is-overflowing': (descriptionOverflow[child.id] || 0) > 1,
+                  }"
                 >
-                  {{ child.desc }}
+                  <span
+                    class="site-desc-text"
+                    :style="{
+                      '--desc-scroll-distance': `${descriptionOverflow[child.id] || 0}px`,
+                    }"
+                  >
+                    {{ child.desc || "" }}
+                  </span>
                 </div>
               </div>
 
@@ -152,7 +163,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  watch,
+  nextTick,
+} from "vue";
+
 import type {
   PageResponse,
   CategoryList,
@@ -180,6 +198,107 @@ const {
     },
   },
 );
+
+
+
+// 网站描述的 DOM 引用与溢出距离
+const descriptionOverflow = ref<Record<number, number>>({});
+
+const descriptionElements = new Map<
+  number,
+  { wrapper: HTMLElement; text: HTMLElement }
+>();
+
+let descriptionObserver: ResizeObserver | null = null;
+const registerDescription = (
+  el: Element | null,
+  id: number,
+) => {
+  const previous = descriptionElements.get(id);
+
+  if (!(el instanceof HTMLElement)) {
+    if (previous) {
+      descriptionObserver?.unobserve(previous.wrapper);
+      descriptionElements.delete(id);
+    }
+
+    delete descriptionOverflow.value[id];
+    return;
+  }
+
+  const text = el.querySelector<HTMLElement>(
+    ".site-desc-text",
+  );
+
+  if (!text) return;
+
+  if (previous && previous.wrapper !== el) {
+    descriptionObserver?.unobserve(previous.wrapper);
+  }
+
+  descriptionElements.set(id, {
+    wrapper: el,
+    text,
+  });
+
+  descriptionObserver?.observe(el);
+
+  void nextTick(() => measureDescription(id));
+};
+
+// 精确计算文字超出容器的距离
+const measureDescription = (id: number) => {
+  const elements = descriptionElements.get(id);
+
+  if (!elements) return;
+
+  const { wrapper, text } = elements;
+  const distance = Math.max(
+    0,
+    text.scrollWidth - wrapper.clientWidth,
+  );
+
+  descriptionOverflow.value[id] = distance;
+};
+
+// 重新测量所有描述
+const measureAllDescriptions = async () => {
+  await nextTick();
+
+  for (const id of descriptionElements.keys()) {
+    measureDescription(id);
+  }
+};
+
+// 监听窗口尺寸、网格宽度变化
+onMounted(() => {
+  descriptionObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      for (const [id, elements] of descriptionElements) {
+        if (elements.wrapper === entry.target) {
+          measureDescription(id);
+          break;
+        }
+      }
+    }
+  });
+
+  for (const elements of descriptionElements.values()) {
+    descriptionObserver.observe(elements.wrapper);
+  }
+
+  measureAllDescriptions();
+});
+
+// 数据更新后重新计算，兼容搜索数据刷新等情况
+watch(
+  () => categoryList.value?.data?.list,
+  () => {
+    measureAllDescriptions();
+  },
+  { deep: true },
+);
+
 
 // 将首页站点数据共享给顶部搜索组件
 const siteSearchCategories = useState<CategoryList[]>(
@@ -285,6 +404,10 @@ onUnmounted(() => {
     "storage",
     handleStorageChange,
   );
+
+  descriptionObserver?.disconnect();
+  descriptionObserver = null;
+  descriptionElements.clear();
 });
 
 const handleClick = (record: WebsiteList) => {

@@ -857,3 +857,61 @@ html.dark .site-footer-inner > div:last-child strong {
     padding: 14px;
   }
 }
+/* 描述固定一行，默认省略超出部分 */
+.site-desc-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.site-desc-text {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+html.dark .site-desc-text {
+  color: #9ca3af;
+}
+
+/* 只有鼠标悬停设备才播放滚动动画 */
+@media (hover: hover) and (pointer: fine) {
+  .nav-card:hover .site-desc-wrap.is-overflowing .site-desc-text {
+    width: max-content;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+
+    animation: site-desc-marquee 4s ease-in-out 0.35s infinite alternate;
+    will-change: transform;
+  }
+}
+
+@keyframes site-desc-marquee {
+  0%,
+  12% {
+    transform: translateX(0);
+  }
+
+  88%,
+  100% {
+    transform: translateX(calc(-1 * var(--desc-scroll-distance)));
+  }
+}
+
+/* 尊重系统的减少动态效果设置 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-card:hover .site-desc-wrap.is-overflowing .site-desc-text {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: none;
+    will-change: auto;
+  }
+}
