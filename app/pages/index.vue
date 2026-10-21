@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'; // 确保引入所有需要的 API
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import type { PageResponse, CategoryList, Response, WebsiteList } from "~/lib/type";
 
 const client = useSupabaseClient<WebsiteList>();
@@ -96,6 +96,28 @@ const { data: categoryList, status: categoryStatus } = await useFetch<Response<P
         });
       },
     }
+);
+
+// 将首页已经加载的站点数据共享给顶部搜索组件
+const siteSearchCategories = useState<CategoryList[]>(
+  'site-search-categories',
+  () => []
+);
+
+const siteSearchLoaded = useState<boolean>(
+  'site-search-loaded',
+  () => false
+);
+
+watch(
+  () => categoryList.value?.data?.list,
+  (list) => {
+    if (list) {
+      siteSearchCategories.value = list;
+      siteSearchLoaded.value = true;
+    }
+  },
+  { immediate: true }
 );
 
 // 3. 数据加载后立即初始化所有分类的状态

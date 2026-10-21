@@ -16,14 +16,17 @@
       </ClientOnly>
       <ClientOnly>
         <UButton
-            :icon="isAllCollapsed ? 'i-mingcute-unfold-vertical-fill' : 'mingcute:fold-vertical-fill'"
-            size="xl"
-            color="primary"
-            variant="solid"
-            @click="handleGlobalToggle"
-            square
-            class="z-50 shadow-lg transition-all duration-300 hover:scale-110 cursor-pointer rounded-full"
-            :title="isAllCollapsed ? '全部展开' : '全部折叠'"
+          :icon="isAllCollapsed
+            ? 'mingcute:unfold-vertical-fill'
+            : 'mingcute:fold-vertical-fill'"
+          size="xl"
+          color="primary"
+          variant="solid"
+          @click="handleGlobalToggle"
+          square
+          class="z-50 !h-11 !w-11 !min-w-11 !p-0 flex-none shadow-lg transition-colors duration-200 cursor-pointer rounded-full"
+          :ui="{ leadingIcon: '!size-5' }"
+          :title="isAllCollapsed ? '全部展开' : '全部折叠'"
         />
       </ClientOnly>
 
