@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="site-layout">
     <Header />
 
-    <main style="min-height: calc(100vh - 9rem)" class="!overflow-y-hidden p-4">
+    <main class="site-main p-4">
       <slot />
     </main>
 

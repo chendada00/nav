@@ -160,7 +160,6 @@ import type {
   WebsiteList,
 } from "~/lib/type";
 
-const client = useSupabaseClient<WebsiteList>();
 const toast = useToast();
 
 // 每个分类独立保存折叠状态
@@ -288,21 +287,8 @@ onUnmounted(() => {
   );
 });
 
-// 点击站点：打开网站并更新访问次数
-const handleClick = async (record: WebsiteList) => {
-  try {
-    window.open(record.url);
-
-    await client.rpc("increment_visit_count", {
-      row_id: record.id,
-      increment_value: Math.floor(Math.random() * 100) + 1,
-    });
-  } catch {
-    toast.add({
-      title: "更新访问次数失败",
-      color: "error",
-    });
-  }
+const handleClick = (record: WebsiteList) => {
+  window.open(record.url, "_blank", "noopener,noreferrer");
 };
 
 definePageMeta({

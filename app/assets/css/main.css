@@ -312,23 +312,29 @@ html.dark .category-count {
   min-width: 12px;
   height: 1px;
   margin-left: 3px;
+  border-radius: 999px;
 
   background: linear-gradient(
     90deg,
-    rgba(124, 58, 237, 0.30),
-    rgba(59, 130, 246, 0.18) 48%,
+    rgba(124, 58, 237, 0.52),
+    rgba(59, 130, 246, 0.30) 58%,
     transparent
   );
 
+  opacity: 0;
+  transform: scaleX(0);
   transform-origin: left center;
 
   transition:
-    height 380ms ease,
-    opacity 380ms ease;
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease,
+    height 300ms ease;
 }
 
 .category-heading:hover .category-divider {
   height: 2px;
+  opacity: 5;
+  transform: scaleX(1);
 }
 
 /* 折叠箭头 */
@@ -559,22 +565,27 @@ html.dark .nav-card.card-base::before {
    不改变原有布局
    ========================================= */
 
-header.sticky {
-  background: rgba(248, 247, 253, 0.88);
-  border-bottom: 1px solid rgba(124, 58, 237, 0.11);
+  header.sticky {
+  background: rgba(248, 247, 253, 0.66);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.09);
+  box-shadow: 0 4px 22px rgba(31, 41, 55, 0.035);
 
-  box-shadow: 0 4px 18px rgba(31, 41, 55, 0.035);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
 
   transition:
-    background-color 350ms ease,
-    border-color 350ms ease,
-    box-shadow 350ms ease;
+    background-color 450ms ease,
+    border-color 450ms ease,
+    box-shadow 450ms ease;
 }
 
 html.dark header.sticky {
-  background: rgba(20, 19, 33, 0.91);
-  border-bottom-color: rgba(167, 139, 250, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16);
+  background: rgba(20, 19, 33, 0.70);
+  border-bottom-color: rgba(167, 139, 250, 0.12);
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.13);
+
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  backdrop-filter: blur(22px) saturate(135%);
 }
 
 footer a,
@@ -665,4 +676,129 @@ html.dark footer > div > div:first-child a:hover {
   .category-heading:active {
     transform: none !important;
   }
+}
+
+
+/* 页脚：柔和毛玻璃与三栏布局 */
+.site-footer {
+  position: relative;
+  z-index: 10;
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  color: #6b7280;
+  background: rgba(248, 247, 253, 0.68);
+  border-top: 1px solid rgba(124, 58, 237, 0.10);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  backdrop-filter: blur(20px) saturate(135%);
+}
+
+html.dark .site-footer {
+  color: #a9a5bb;
+  background: rgba(20, 19, 33, 0.68);
+  border-top-color: rgba(167, 139, 250, 0.14);
+}
+
+.site-footer-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+}
+
+.site-footer-inner > div:first-child {
+  justify-content: flex-start;
+}
+
+.site-footer-inner > div:last-child {
+  justify-content: flex-end;
+}
+
+/* Powered by 伴随：默认中性，悬停才变紫 */
+.site-footer-inner > div:first-child > span {
+  color: inherit !important;
+}
+
+.site-footer-inner > div:first-child a {
+  color: inherit !important;
+  text-decoration: none !important;
+  transition: color 260ms ease;
+}
+
+.site-footer-inner > div:first-child a:hover {
+  color: #8b5cf6 !important;
+  text-decoration: none !important;
+}
+
+html.dark .site-footer-inner > div:first-child a:hover {
+  color: #c4b5fd !important;
+}
+
+/* 统计数字：小巧的胶囊样式 */
+.site-footer-inner > div:last-child > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.045);
+  white-space: nowrap;
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    transform 250ms ease;
+}
+
+.site-footer-inner > div:last-child strong {
+  color: #6d28d9;
+  font-variant-numeric: tabular-nums;
+}
+
+html.dark .site-footer-inner > div:last-child > span {
+  border-color: rgba(167, 139, 250, 0.16);
+  background: rgba(139, 92, 246, 0.09);
+}
+
+html.dark .site-footer-inner > div:last-child strong {
+  color: #c4b5fd;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .site-footer-inner > div:last-child > span:hover {
+    transform: translateY(-1px);
+    border-color: rgba(124, 58, 237, 0.24);
+    background: rgba(124, 58, 237, 0.09);
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer-inner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.75rem;
+  }
+
+  .site-footer-inner > div:first-child,
+  .site-footer-inner > div:last-child {
+    justify-content: center;
+  }
+}
+
+.site-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.site-main {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+/* 浮动按钮继续固定在视口右下角 */
+.site-layout > .fixed {
+  position: fixed;
 }

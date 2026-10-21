@@ -1,10 +1,6 @@
 <template>
-  <footer
-    class="mt-8 border-t border-gray-200/70 px-4 py-4 text-sm text-gray-500 dark:border-gray-700/70 dark:text-gray-400"
-  >
-    <div
-      class="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-3 sm:grid-cols-3 sm:gap-4"
-    >
+  <footer class="site-footer">
+    <div class="site-footer-inner">
       <!-- 左侧：Powered by 伴随 -->
       <div class="flex items-center justify-center sm:justify-start">
         <span
