@@ -81,12 +81,6 @@ import type { PageResponse, CategoryList, Response, WebsiteList } from "~/lib/ty
 const client = useSupabaseClient<WebsiteList>();
 const toast = useToast();
 
-defineOgImageComponent("Nuxt", {
-  headline: "Greetings",
-  title: `${process.env.NUXT_SITE_NAME} 👋`,
-  description: "A beautiful personal site navigation!",
-});
-
 // 1. 用于存储每个分类的折叠状态 (本地状态)
 // key 是分类 ID，value 是布尔值 (true: 折叠, false: 展开)
 const collapsedStates = ref<Record<number, boolean>>({});
@@ -192,6 +186,6 @@ const handleClick = async (record: WebsiteList) => {
 
 // 9. 页面元数据 (保持不变)
 definePageMeta({
-  title: "伴随的个人站点导航！",
+  title: "拾光导航 | nav-station",
 });
 </script>

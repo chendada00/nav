@@ -8,9 +8,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       baseUrl: process.env.NODE_ENV === 'production' ? process.env.NUXT_SITE_URL : 'http://localhost:5173',
-      siteTitle: process.env.NUXT_SITE_NAME,
-      siteDescription: process.env.NUXT_SITE_DESCRIPTION,
-      siteKeywords: process.env.NUXT_SITE_KEYWORDS,
+      siteTitle: process.env.NUXT_SITE_NAME || '拾光导航 | nav-station',
+      siteDescription: process.env.NUXT_SITE_DESCRIPTION || '轻量、简洁的个人网址导航',
+      siteKeywords: process.env.NUXT_SITE_KEYWORDS || '拾光导航,网址导航,效率工具,网站收藏',
     }
   },
   app: {
@@ -27,11 +27,8 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
     '@nuxtjs/color-mode',
     '@nuxtjs/seo',
-    'nuxt-umami',
     'dayjs-nuxt',
-    '@nuxt/ui',
-    'nuxt-gtag',
-    'nuxt-clarity-analytics'
+    '@nuxt/ui'
   ],
   // supabase Auth
   supabase: {
@@ -41,20 +38,8 @@ export default defineNuxtConfig({
       exclude: ['/']
     }
   },
-  // nuxt-umami Umami 统计
-  umami: {
-    id: '87f94791-c0a5-424f-a3f4-e0171d82352b',
-    host: 'https://um.baiwumm.com',
-    autoTrack: true
-  },
-  // nuxt-gtag 谷歌统计
-  gtag: {
-    enabled: process.env.NODE_ENV === 'production',
-    id: 'G-76RP7KMHMQ',
-    config: {
-      page_title: process.env.NUXT_SITE_NAME
-    },
-  },
+  // 禁用运行时 OG 图片生成，避免不必要的图片处理依赖。
+  ogImage: { enabled: false },
   // dayjs 插件
   dayjs: {
     locales: ['zh-cn'],

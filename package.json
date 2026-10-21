@@ -1,20 +1,19 @@
 {
-  "name": "dream-site",
+  "name": "nav-station",
   "private": true,
   "type": "module",
   "version": "2.2.6",
   "author": {
-    "name": "baiwumm",
-    "email": "me@baiwumm.com",
-    "url": "https://baiwumm.com"
+    "name": "nav-station"
   },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "preview": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
-    "release": "release-it"
+    "release": "release-it",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@nuxt/eslint": "1.6.0",
@@ -26,7 +25,6 @@
     "@nuxtjs/seo": "3.1.0",
     "@nuxtjs/supabase": "1.5.3",
     "@unhead/vue": "^2.0.3",
-    "@vercel/analytics": "^1.5.0",
     "dayjs-nuxt": "2.1.11",
     "eslint": "^9.0.0",
     "gsap": "^3.13.0",
@@ -37,7 +35,8 @@
     "nuxt-umami": "3.2.0",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1",
-    "zod": "^4.0.5"
+    "zod": "^4.0.5",
+    "@vercel/analytics": "^1.5.0"
   },
   "packageManager": "pnpm@8.15.5+sha1.a58c038faac410c947dbdb93eb30994037d0fce2",
   "devDependencies": {

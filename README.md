@@ -1,6 +1,6 @@
 <div align="center">
-<img alt="logo" src="./public/logo.svg" width="80"/>
-<h2>Dream Site</h2>
+<img alt="拾光导航 logo" src="./public/logo.svg" width="80"/>
+<h2>拾光导航 · nav-station</h2>
 <p>一个简约、精美、现代化的个人站点导航</p>
 </div>
 
@@ -24,11 +24,11 @@
 
 ## ☘️ 项目简介
 
-`Dream Site` 是一个现代化的个人站点导航系统，旨在为用户提供美观、高效的个人网站收藏与管理体验。无论你是开发者、设计师还是内容创作者，都可以用它来组织和展示你喜爱的网站资源。
+`拾光导航（nav-station）` 是一个轻量、简洁的个人站点导航系统，旨在为用户提供美观、高效的个人网站收藏与管理体验。无论你是开发者、设计师还是内容创作者，都可以用它来组织和展示你喜爱的网站资源。
 
 ## 🌿 在线体验
 
-➡️ [点击打开](https://site.baiwumm.com/)
+➡️ [点击打开](https://github.com/chendada00/nav)
 
 ## 🪴 技术栈
 
@@ -65,10 +65,10 @@
 ### 🧑‍💻 本地开发
 ```bash
 # 克隆项目
-git clone https://github.com/baiwumm/dream-site.git
+git clone https://github.com/chendada00/nav.git
 
 # 进入项目目录
-cd dream-site
+cd nav
 
 # 安装依赖
 pnpm install
@@ -101,11 +101,11 @@ SUPABASE_KEY="xxx"
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=baiwumm/dream-site&type=Date)](https://star-history.com/#baiwumm/dream-site&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=chendada00/nav&type=Date)](https://star-history.com/#chendada00/nav&Date)
 
 ## 轻量化版本说明
 
-此版本保留首页导航、分类/站点数据、Supabase 数据库、后台管理、登录/注册、OAuth 回调及原有管理 API。为降低首屏和运行时负担，首页不再启动持续运行的 WebGL 鼠标流体和 Canvas 背景动画；分类标题和站点卡片改为轻量 DOM 展示，卡片 hover 样式仍保留。首页新增专用 `/api/home` 只读取展示需要的字段，不影响后台使用的完整分类/站点 API。
+拾光导航（nav-station）保留首页导航、分类/站点数据、Supabase 数据库、后台管理、登录/注册、OAuth 回调及原有管理 API。为降低首屏和运行时负担，首页不再启动持续运行的 WebGL 鼠标流体和 Canvas 背景动画；分类标题和站点卡片改为轻量 DOM 展示，卡片 hover 样式仍保留。首页新增专用 `/api/home` 只读取展示需要的字段，不影响后台使用的完整分类/站点 API。
 
 ### 环境变量
 
@@ -120,7 +120,11 @@ SUPABASE_KEY="xxx"
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
-pnpm preview
+pnpm preview  # 直接启动 .output/server/index.mjs
 ```
 
 > 当前交付环境无法访问 npm registry，因此无法在此环境执行依赖安装和真实生产构建。请在可联网的本地环境或 CI 中运行上述命令，并在部署后验证登录、后台 CRUD 和首页数据。
+
+### 生产预览与图片处理
+
+`pnpm preview` 直接运行 `node .output/server/index.mjs`，绕过某些 Nuxt CLI 版本在预览模式下对 `{{ output.serverDir }}` 的错误展开。若本地仍出现 `sharp-emscripten-wasm32.node.wasm` 缺失，请删除 `.output` 后重新构建，并执行 `pnpm install --force` 后再运行 `pnpm build`；这类报错通常是本机依赖/可选二进制安装不完整。运行时 OG 图片生成已关闭，避免额外的图片渲染开销。

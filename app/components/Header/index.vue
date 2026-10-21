@@ -34,7 +34,7 @@
       <!-- 夜间模式 -->
       <ColorMode />
       <!-- github -->
-<!--      <SocialIcon url="https://github.com/baiwumm/dream-site" tip="Github" icon="i-simple-icons-github" />-->
+
       <!-- 登录用户头像 -->
       <user-avatar />
       <!-- 跳转管理界面 -->

@@ -7,18 +7,15 @@
         <NuxtPage />
       </NuxtLayout>
     </UApp>
-    <Analytics />
   </div>
 </template>
 
 <script setup lang="ts">
-import { Analytics } from "@vercel/analytics/nuxt";
-
 useHead({
   link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
   meta: [
-    { name: "keywords", content: "导航,网站,伴随,伴随的小站" },
-    { name: "description", content: "伴随の个人站点导航！" },
+    { name: "keywords", content: "拾光导航,网址导航,效率工具,网站收藏" },
+    { name: "description", content: "拾光导航（nav-station），轻量、简洁的个人网址导航。" },
   ],
 });
 </script>
