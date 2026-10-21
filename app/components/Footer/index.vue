@@ -7,17 +7,21 @@
     >
       <!-- 左侧：Powered by 伴随 -->
       <div class="flex items-center justify-center sm:justify-start">
-        <span>Powered by&nbsp;</span>
+        <span
+          class="font-medium text-violet-600 dark:text-violet-300"
+        >
+          Powered by&nbsp;
+        </span>
+
         <a
           href="https://www.xn--xpqp35o.cn/"
           target="_blank"
           rel="noopener noreferrer"
-          class="font-semibold text-gray-700 transition-colors hover:text-primary-500 dark:text-gray-200 dark:hover:text-primary-400"
+          class="font-semibold text-gray-700 transition-colors hover:text-violet-600 dark:text-gray-200 dark:hover:text-violet-300"
         >
           伴随
         </a>
       </div>
-
       <!-- 中间：备案号 -->
       <div class="flex items-center justify-center">
         <a
