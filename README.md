@@ -145,6 +145,11 @@ pnpm build
 
 访问 [https://nav.伴随.cn/](https://nav.伴随.cn/) 使用导航站。
 
+## 🤝 致谢
+
+* **致谢原仓库**：[https://github.com/baiwumm/better-nav](https://github.com/baiwumm/better-nav)
+* **原作者**：[@baiwumm](https://github.com/baiwumm)
+
 ## 📄 许可证
 
 请以仓库中实际的 `LICENSE` 文件为准。若项目尚未提供许可证，请在确认授权方式后再添加相应声明。
