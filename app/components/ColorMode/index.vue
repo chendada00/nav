@@ -1,10 +1,3 @@
-<!--
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-04-11 08:40:47
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2025-07-23 08:45:21
- * @Description: 主题模式切换
--->
 <script setup lang="ts">
 const colorMode = useColorMode();
 

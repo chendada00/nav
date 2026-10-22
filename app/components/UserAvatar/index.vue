@@ -1,10 +1,3 @@
-<!--
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-06-06 17:53:32
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2025-07-24 09:15:43
- * @Description: 当前登录用户头像
--->
 <template>
   <client-only>
     <template v-if="user">

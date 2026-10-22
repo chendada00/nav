@@ -1,10 +1,3 @@
-<!--
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-06-06 18:00:33
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2025-07-23 08:49:18
- * @Description: 注销用户
--->
 <template>
   <client-only>
     <UTooltip text="注销用户">

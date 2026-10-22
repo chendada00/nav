@@ -1,10 +1,3 @@
-/*
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-06-06 10:14:37
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2024-06-14 15:17:24
- * @Description: 新增站点列表
- */
 import type { Response, WebsiteEdit, WebsiteList } from '~/lib/type'
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { RESPONSE_STATUS_CODE } from '~/lib/enum'

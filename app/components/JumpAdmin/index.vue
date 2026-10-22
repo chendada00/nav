@@ -1,10 +1,3 @@
-<!--
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-06-11 09:28:20
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2025-07-23 08:49:00
- * @Description: 跳转登录界面
--->
 <template>
   <client-only>
     <template v-if="user">

@@ -1,10 +1,3 @@
-/*
- * @Author: 白雾茫茫丶<baiwumm.com>
- * @Date: 2024-06-06 10:14:37
- * @LastEditors: 白雾茫茫丶<baiwumm.com>
- * @LastEditTime: 2024-06-13 15:08:30
- * @Description: 新增分类列表
- */
 import type { Response, CategoryEdit, CategoryList } from '~/lib/type'
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import { RESPONSE_STATUS_CODE } from '~/lib/enum'
