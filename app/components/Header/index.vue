@@ -1,12 +1,14 @@
 
 <template>
   <header
-    class="flex gap-4 justify-between items-center sticky top-0 h-14 shadow-md dark:shadow-white-500/50 backdrop-blur transition-all w-full dark:shadow-[0_4px_6px_-1px_rgb(255,255,255,0.1)] z-50 px-6"
+    class="site-header-grid sticky top-0 h-14 w-full gap-4 px-6 shadow-md backdrop-blur transition-all z-50 dark:shadow-white-500/50 dark:shadow-[0_4px_6px_-1px_rgb(255,255,255,0.1)]"
   >
-    <!-- logo -->
-    <NuxtLink to="/">
-      <div class="flex gap-4 items-center">
-        <!-- logo -->
+    <!-- 左侧 Logo 和站点标题 -->
+    <NuxtLink
+      to="/"
+      class="site-header-logo"
+    >
+      <div class="flex min-w-0 items-center gap-4">
         <NuxtImg
           src="/logo.png"
           alt="伴随の个人导航"
@@ -14,6 +16,7 @@
           height="32"
           class="h-8 w-8 shrink-0 object-contain"
         />
+
         <SplitText
           :text="$config.public.siteTitle"
           class-name="text-xl !hidden font-semibold md:!block"
@@ -29,23 +32,23 @@
         />
       </div>
     </NuxtLink>
-    <!-- 右侧 社交图标 -->
-    <div class="flex items-center">
-      <!-- 网站搜索 -->
-      <SiteSearch />
-      <!-- 夜间模式 -->
-      <ColorMode />
-      <!-- github -->
 
-      <!-- 登录用户头像 -->
+    <!-- 中间时间：不改变导航高度 -->
+    <div class="site-header-clock">
+      <NavigationClock />
+    </div>
+
+    <!-- 右侧功能：保留原有组件及顺序 -->
+    <div class="site-header-actions">
+      <SiteSearch />
+      <ColorMode />
       <user-avatar />
-      <!-- 跳转管理界面 -->
-       <JumpAdmin /> 
-      <!-- 注销用户按钮 -->
+      <JumpAdmin />
       <Logout />
     </div>
   </header>
 </template>
+
 <script setup lang="ts">
 const colorMode = useColorMode();
 

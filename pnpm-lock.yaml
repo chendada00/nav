@@ -44,6 +44,9 @@ dependencies:
   gsap:
     specifier: ^3.13.0
     version: 3.13.0
+  lunar-javascript:
+    specifier: ^1.7.7
+    version: 1.7.7
   motion-v:
     specifier: ^1.5.0
     version: 1.5.0(vue@3.5.17)
@@ -1976,7 +1979,6 @@ packages:
       - '@vercel/blob'
       - '@vercel/kv'
       - aws4fetch
-      - bare-buffer
       - db0
       - idb-keyval
       - ioredis
@@ -3209,6 +3211,8 @@ packages:
       '@parcel/watcher-win32-arm64': 2.5.1
       '@parcel/watcher-win32-ia32': 2.5.1
       '@parcel/watcher-win32-x64': 2.5.1
+    bundledDependencies:
+      - napi-wasm
 
   /@phun-ky/typeof@1.2.8:
     resolution: {integrity: sha512-7J6ca1tK0duM2BgVB+CuFMh3idlIVASOP2QvOCbNWDc6JnvjtKa9nufPoJQQ4xrwBonwgT1TIhRRcEtzdVgWsA==}
@@ -3955,7 +3959,7 @@ packages:
 
   /@tailwindcss/oxide@4.1.11:
     resolution: {integrity: sha512-Q69XzrtAhuyfHo+5/HMgr1lAiPP/G40OMFAnws7xcFEYqcypZmdW8eGXaOUIeOl1dzPJBPENXgbjsOyhg2nkrg==}
-    engines: {node: '>= 10'}
+    engines: {node: '>=14.0.0'}
     requiresBuild: true
     dependencies:
       detect-libc: 2.0.4
@@ -3974,6 +3978,13 @@ packages:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.1.11
       '@tailwindcss/oxide-win32-x64-msvc': 4.1.11
     dev: false
+    bundledDependencies:
+      - '@napi-rs/wasm-runtime'
+      - '@emnapi/core'
+      - '@emnapi/runtime'
+      - '@tybys/wasm-util'
+      - '@emnapi/wasi-threads'
+      - tslib
 
   /@tailwindcss/postcss@4.1.11:
     resolution: {integrity: sha512-q/EAIIpF6WpLhKEuQSEVMZNMIY8KhWoAemZ9eylNAih9jxMGAYPPWBn3I9QL/2jZ+e7OEz/tZkX5HwbBR4HohA==}
@@ -5219,54 +5230,6 @@ packages:
   /bare-events@2.6.0:
     resolution: {integrity: sha512-EKZ5BTXYExaNqi3I3f9RtEsaI/xBSGjE0XZCZilPzFAV/goswFHuPd9jEZlPIZ/iNZJwDSao9qRiScySz7MbQg==}
     requiresBuild: true
-    dev: false
-    optional: true
-
-  /bare-fs@4.1.6:
-    resolution: {integrity: sha512-25RsLF33BqooOEFNdMcEhMpJy8EoR88zSMrnOQOaM3USnOK2VmaJ1uaQEwPA6AQjrv1lXChScosN6CzbwbO9OQ==}
-    engines: {bare: '>=1.16.0'}
-    requiresBuild: true
-    peerDependencies:
-      bare-buffer: '*'
-    peerDependenciesMeta:
-      bare-buffer:
-        optional: true
-    dependencies:
-      bare-events: 2.6.0
-      bare-path: 3.0.0
-      bare-stream: 2.6.5(bare-events@2.6.0)
-    dev: false
-    optional: true
-
-  /bare-os@3.6.1:
-    resolution: {integrity: sha512-uaIjxokhFidJP+bmmvKSgiMzj2sV5GPHaZVAIktcxcpCyBFFWO+YlikVAdhmUo2vYFvFhOXIAlldqV29L8126g==}
-    engines: {bare: '>=1.14.0'}
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /bare-path@3.0.0:
-    resolution: {integrity: sha512-tyfW2cQcB5NN8Saijrhqn0Zh7AnFNsnczRcuWODH0eYAXBsJ5gVxAUuNr7tsHSC6IZ77cA0SitzT+s47kot8Mw==}
-    requiresBuild: true
-    dependencies:
-      bare-os: 3.6.1
-    dev: false
-    optional: true
-
-  /bare-stream@2.6.5(bare-events@2.6.0):
-    resolution: {integrity: sha512-jSmxKJNJmHySi6hC42zlZnq00rga4jjxcgNZjY9N5WlOe/iOoGRtdwGsHzQv2RlH2KOYMwGUXhf2zXd32BA9RA==}
-    requiresBuild: true
-    peerDependencies:
-      bare-buffer: '*'
-      bare-events: '*'
-    peerDependenciesMeta:
-      bare-buffer:
-        optional: true
-      bare-events:
-        optional: true
-    dependencies:
-      bare-events: 2.6.0
-      streamx: 2.22.1
     dev: false
     optional: true
 
@@ -8119,7 +8082,6 @@ packages:
       - '@vercel/blob'
       - '@vercel/kv'
       - aws4fetch
-      - bare-buffer
       - db0
       - idb-keyval
       - ioredis
@@ -8766,6 +8728,8 @@ packages:
       lightningcss-win32-arm64-msvc: 1.30.1
       lightningcss-win32-x64-msvc: 1.30.1
     dev: false
+    bundledDependencies:
+      - napi-wasm
 
   /lilconfig@3.1.3:
     resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
@@ -8913,6 +8877,10 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
     dev: true
+
+  /lunar-javascript@1.7.7:
+    resolution: {integrity: sha512-u/KYiwPIBo/0bT+WWfU7qO1d+aqeB90Tuy4ErXenr2Gam0QcWeezUvtiOIyXR7HbVnW2I1DKfU0NBvzMZhbVQw==}
+    dev: false
 
   /luxon@3.7.1:
     resolution: {integrity: sha512-RkRWjA926cTvz5rAb1BqyWkKbbjzCGchDUIKMCUvNi17j6f6j8uHGDV82Aqcqtzd+icoYpELmG3ksgGiFNNcNg==}
@@ -11317,12 +11285,15 @@ packages:
       prebuild-install: 7.1.3
       semver: 7.7.2
       simple-get: 4.0.1
-      tar-fs: 3.1.0
+      tar-fs: 2.1.3
       tunnel-agent: 0.6.0
-    transitivePeerDependencies:
-      - bare-buffer
     dev: false
     optional: true
+    bundledDependencies:
+      - '@emnapi/runtime'
+      - color
+      - detect-libc
+      - semver
 
   /shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
@@ -11800,20 +11771,6 @@ packages:
       mkdirp-classic: 0.5.3
       pump: 3.0.3
       tar-stream: 2.2.0
-    dev: false
-    optional: true
-
-  /tar-fs@3.1.0:
-    resolution: {integrity: sha512-5Mty5y/sOF1YWj1J6GiBodjlDc05CUR8PKXrsnFAiSG0xA+GHeWLovaZPYUDXkH/1iKRf2+M5+OrRgzC7O9b7w==}
-    requiresBuild: true
-    dependencies:
-      pump: 3.0.3
-      tar-stream: 3.1.7
-    optionalDependencies:
-      bare-fs: 4.1.6
-      bare-path: 3.0.0
-    transitivePeerDependencies:
-      - bare-buffer
     dev: false
     optional: true
 

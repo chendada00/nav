@@ -946,3 +946,44 @@ html.dark .site-desc-text {
     will-change: auto;
   }
 }
+
+
+/* 顶部导航三列布局：不改变既有 h-14 高度 */
+.site-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* 左侧 Logo 不挤占中间时间的布局空间 */
+.site-header-logo {
+  min-width: 0;
+  justify-self: start;
+}
+
+/* 时间占据独立的中间列，不使用绝对定位 */
+.site-header-clock {
+  min-width: 0;
+  max-width: 100%;
+  justify-self: center;
+}
+
+/* 右侧操作区维持原有组件排列 */
+.site-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-self: end;
+}
+
+/* 较窄的屏幕隐藏时间，避免挤压搜索和用户操作 */
+@media (max-width: 767px) {
+  .site-header-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .site-header-clock {
+    display: none;
+  }
+}
