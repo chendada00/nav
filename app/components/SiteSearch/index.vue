@@ -1,7 +1,7 @@
 
 <template>
   <div>
-    <UTooltip text="搜索网站 · Ctrl/⌘ K">
+    <UTooltip text="搜索网站 · Ctrl/⌘ F">
       <UButton
         icon="i-lucide-search"
         color="neutral"
@@ -44,7 +44,8 @@
                 autocomplete="off"
                 spellcheck="false"
                 aria-label="搜索网站、描述、标签或网址"
-                @keydown.esc="closeSearch"
+                aria-controls="site-search-results-list"
+                @keydown="handleInputKeydown"
               />
 
               <kbd class="site-search-esc" @click="closeSearch">ESC</kbd>
@@ -57,7 +58,10 @@
               </span>
             </div>
 
-            <div class="site-search-results">
+            <div
+              id="site-search-results-list"
+              class="site-search-results"
+            >
               <template v-if="!keyword.trim()">
                 <div class="site-search-empty">
                   <UIcon name="i-lucide-sparkles" class="text-2xl" />
@@ -70,10 +74,14 @@
 
               <template v-else-if="results.length">
                 <button
-                  v-for="item in results"
+                  v-for="(item, index) in results"
                   :key="item.website.id"
+                  :ref="(el) => setResultRef(el, index)"
                   type="button"
                   class="site-search-result"
+                  :class="{ 'is-active': selectedIndex === index }"
+                  :aria-current="selectedIndex === index ? 'true' : undefined"
+                  @mouseenter="selectedIndex = index"
                   @click="openWebsite(item.website.url)"
                 >
 
@@ -148,7 +156,11 @@
 
             <footer class="site-search-footer">
               <span>
-                <kbd>↵</kbd> 点击结果打开网站
+                <kbd>↑</kbd>
+                <kbd>↓</kbd>
+                选择
+                <kbd>↵</kbd>
+                打开网站
               </span>
               <span>拾光导航 · 快速搜索</span>
             </footer>
@@ -160,7 +172,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  watch,
+} from 'vue'
 import type { CategoryList, WebsiteList, PageResponse, Response } from '~/lib/type'
 
 const isOpen = ref(false)
@@ -215,6 +234,86 @@ const results = computed(() => {
     .slice(0, 30)
 })
 
+
+// 当前键盘选中的搜索结果索引
+const selectedIndex = ref(0)
+
+// 保存每个搜索结果按钮的 DOM 引用
+const resultRefs: HTMLButtonElement[] = []
+
+function setResultRef(
+  el: Element | null,
+  index: number,
+) {
+  if (el instanceof HTMLButtonElement) {
+    resultRefs[index] = el
+  } else {
+    delete resultRefs[index]
+  }
+}
+
+// 搜索结果变化后，将选中位置重置到第一条
+watch(
+  results,
+  () => {
+    selectedIndex.value = 0
+  },
+)
+
+
+function handleInputKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeSearch()
+    return
+  }
+
+  // 没有搜索结果时，不执行上下选择和跳转
+  if (!results.value.length) {
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+
+    selectedIndex.value =
+      (selectedIndex.value + 1) % results.value.length
+
+    scrollSelectedIntoView()
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+
+    selectedIndex.value =
+      (selectedIndex.value - 1 + results.value.length)
+      % results.value.length
+
+    scrollSelectedIntoView()
+    return
+  }
+
+  if (event.key === 'Enter') {
+    event.preventDefault()
+
+    const selected = results.value[selectedIndex.value]
+
+    if (selected?.website.url) {
+      openWebsite(selected.website.url)
+    }
+  }
+}
+
+function scrollSelectedIntoView() {
+  nextTick(() => {
+    resultRefs[selectedIndex.value]?.scrollIntoView({
+      block: 'nearest',
+      behavior: 'auto',
+    })
+  })
+}
+
 function getHostname(url: string) {
   try {
     return new URL(
@@ -264,12 +363,36 @@ function openWebsite(url: string) {
 }
 
 function handleGlobalKeydown(event: KeyboardEvent) {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+  const isShortcut = event.ctrlKey || event.metaKey
+  const key = event.key.toLowerCase()
+
+  // Ctrl+F / Cmd+F：屏蔽浏览器查找，打开导航搜索
+  if (isShortcut && key === 'f') {
     event.preventDefault()
-    if (!isOpen.value) void openSearch()
-    else inputRef.value?.focus()
+
+    if (!isOpen.value) {
+      void openSearch()
+    } else {
+      inputRef.value?.focus()
+    }
+
+    return
   }
 
+  // 保留原有 Ctrl+K / Cmd+K 快捷键
+  if (isShortcut && key === 'k') {
+    event.preventDefault()
+
+    if (!isOpen.value) {
+      void openSearch()
+    } else {
+      inputRef.value?.focus()
+    }
+
+    return
+  }
+
+  // 搜索框关闭时，Esc 不影响其他页面行为
   if (event.key === 'Escape' && isOpen.value) {
     closeSearch()
   }
@@ -393,10 +516,22 @@ onBeforeUnmount(() => {
 }
 
 .site-search-result:hover,
-.site-search-result:focus-visible {
-  border-color: rgb(148 163 184 / 25%);
-  background: rgb(148 163 184 / 10%);
+.site-search-result:focus-visible,
+.site-search-result.is-active {
+  border-color: rgb(139 92 246 / 45%);
+  background: rgb(139 92 246 / 10%);
   outline: none;
+}
+
+.site-search-result.is-active {
+  box-shadow: inset 3px 0 0 #8b5cf6;
+}
+
+:global(.dark) .site-search-result:hover,
+:global(.dark) .site-search-result:focus-visible,
+:global(.dark) .site-search-result.is-active {
+  border-color: rgb(167 139 250 / 45%);
+  background: rgb(167 139 250 / 12%);
 }
 
 .site-search-logo {
