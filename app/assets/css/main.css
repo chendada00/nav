@@ -861,7 +861,7 @@ html.dark .site-footer-inner > div:last-child strong {
     padding: 14px;
   }
 }
-/* 描述固定一行，默认省略超出部分 */
+/* 描述容器：裁剪超出卡片的文字 */
 .site-desc-wrap {
   width: 100%;
   min-width: 0;
@@ -869,47 +869,50 @@ html.dark .site-footer-inner > div:last-child strong {
   position: relative;
 }
 
+.site-desc-track {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: max-content;
+  max-width: none;
+}
+
+/* 描述文字 */
 .site-desc-text {
   display: block;
-  width: 100%;
-  overflow: hidden;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+  overflow: visible;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  text-overflow: clip;
 
   color: #6b7280;
   font-size: 12px;
   line-height: 1.6;
-
-  transform: translate3d(0, 0, 0);
 }
-
 
 html.dark .site-desc-text {
   color: #a5a1b5;
 }
 
-/* 只有鼠标悬停设备才播放滚动动画 */
+/* 鼠标悬停时，单方向循环滚动 */
 @media (hover: hover) and (pointer: fine) {
   .nav-card:hover
     .site-desc-wrap.is-overflowing
-    .site-desc-text {
-    width: max-content;
-    max-width: none;
-    overflow: visible;
-    text-overflow: clip;
-
+    .site-desc-track {
     animation:
       site-desc-marquee
       var(--desc-scroll-duration, 2s)
       linear
       0.15s
-      infinite
-      alternate;
+      infinite;
 
     will-change: transform;
   }
 }
 
+/* 滚动到第一份文字的末尾，正好衔接第二份 */
 @keyframes site-desc-marquee {
   from {
     transform: translate3d(0, 0, 0);
@@ -924,13 +927,49 @@ html.dark .site-desc-text {
   }
 }
 
+
 /* 触屏设备不触发悬停滚动 */
 @media (hover: none), (pointer: coarse) {
+  .site-desc-track {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+  }
+
   .site-desc-text {
+    display: block;
     width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .site-desc-text[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+/* 尊重系统的减少动态效果设置 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-card:hover
+    .site-desc-wrap.is-overflowing
+    .site-desc-track {
     animation: none;
+    will-change: auto;
+  }
+
+  .site-desc-wrap {
+    overflow: hidden;
+  }
+
+  .site-desc-text {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .site-desc-text[aria-hidden="true"] {
+    display: none;
   }
 }
 

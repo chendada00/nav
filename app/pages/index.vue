@@ -111,15 +111,25 @@
                     'is-overflowing': (descriptionOverflow[child.id] || 0) > 1,
                   }"
                 >
-                  <span
-                    class="site-desc-text"
+                  <div
+                    class="site-desc-track"
                     :style="{
-                      '--desc-scroll-distance': `${descriptionOverflow[child.id] || 0}px`,
+                      '--desc-scroll-distance': `${descriptionLoopDistance[child.id] || 0}px`,
                       '--desc-scroll-duration': `${getDescriptionDuration(child.id)}s`,
                     }"
                   >
-                    {{ child.desc || "" }}
-                  </span>
+                    <span class="site-desc-text">
+                      {{ child.desc || "" }}
+                    </span>
+
+                    <span
+                      v-if="(descriptionOverflow[child.id] || 0) > 1"
+                      class="site-desc-text"
+                      aria-hidden="true"
+                    >
+                      {{ child.desc || "" }}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -204,6 +214,8 @@ const {
 
 // 网站描述的 DOM 引用与溢出距离
 const descriptionOverflow = ref<Record<string, number>>({});
+// 两份描述无缝衔接所需的移动距离
+const descriptionLoopDistance = ref<Record<string, number>>({});
 
 const descriptionElements = new Map<
   string,
@@ -247,30 +259,42 @@ const registerDescription = (
   void nextTick(() => measureDescription(id));
 };
 
-// 描述滚动速度：每秒约 100px，限制单程时长
+// 滚动速度：每秒移动 80px
+const DESCRIPTION_SCROLL_SPEED = 80;
+
+// 根据完整循环距离计算动画时长
 const getDescriptionDuration = (id: string | number) => {
-  const distance = descriptionOverflow.value[id] || 0;
+  const distance = descriptionLoopDistance.value[id] || 0;
 
   if (distance <= 1) return 0;
 
-  return Math.min(5, Math.max(1.2, distance / 100));
+  return distance / DESCRIPTION_SCROLL_SPEED;
 };
 
-// 精确计算文字超出容器的距离
+// 测量描述溢出距离和无缝循环距离
 const measureDescription = (id: number) => {
   const elements = descriptionElements.get(id);
 
   if (!elements) return;
 
   const { wrapper, text } = elements;
-  const distance = Math.max(
+
+  // 超出容器的距离：决定是否需要滚动
+  const overflowDistance = Math.max(
     0,
     text.scrollWidth - wrapper.clientWidth,
   );
 
-  descriptionOverflow.value[id] = distance;
-};
+  descriptionOverflow.value[id] = overflowDistance;
 
+  // 完整文字宽度 + 两份文字之间的间距
+  const gap = 32;
+
+  descriptionLoopDistance.value[id] =
+    overflowDistance > 1
+      ? text.scrollWidth + gap
+      : 0;
+};
 // 重新测量所有描述
 const measureAllDescriptions = async () => {
   await nextTick();
