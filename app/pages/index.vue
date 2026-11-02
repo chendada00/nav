@@ -133,6 +133,15 @@
                 </div>
               </div>
 
+              <UTooltip :text="healthTooltip(child.health)">
+                <span
+                  class="site-health-dot"
+                  :class="`site-health-dot--${child.health?.status || 'unknown'}`"
+                  :aria-label="healthTooltip(child.health)"
+                  role="img"
+                />
+              </UTooltip>
+
               <div class="flex gap-1 absolute top-2 right-2">
                 <UBadge
                   v-if="child.pinned"
@@ -188,6 +197,47 @@ import type {
   Response,
   WebsiteList,
 } from "~/lib/type";
+
+import type {
+  PageResponse,
+  CategoryList,
+  Response,
+  WebsiteList,
+  WebsiteHealth,
+} from '~/lib/type'
+
+const healthTooltip = (health?: WebsiteHealth | null) => {
+  if (!health || health.status === 'unknown') {
+    return '尚无检测结果'
+  }
+
+  const checkedAt = health.checked_at
+    ? new Date(health.checked_at).toLocaleString()
+    : '时间未知'
+
+  const statusText = health.status === 'up'
+    ? '最近检测：可访问'
+    : '最近检测：暂不可达'
+
+  const details = [
+    statusText,
+    `检测时间：${checkedAt}`,
+  ]
+
+  if (health.http_status !== null) {
+    details.push(`HTTP 状态：${health.http_status}`)
+  }
+
+  if (health.response_time_ms !== null) {
+    details.push(`响应耗时：${health.response_time_ms} ms`)
+  }
+
+  if (health.consecutive_failures > 0) {
+    details.push(`连续失败：${health.consecutive_failures} 次`)
+  }
+
+  return details.join('\n')
+}
 
 const toast = useToast();
 
@@ -452,3 +502,47 @@ definePageMeta({
   title: "拾光导航 | nav-station",
 });
 </script>
+
+<style scoped>
+.site-health-dot {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.site-health-dot--up {
+  background: #22c55e;
+  animation: site-health-pulse 2.4s ease-in-out infinite;
+}
+
+.site-health-dot--down {
+  background: #ef4444;
+}
+
+.site-health-dot--unknown {
+  background: #94a3b8;
+}
+
+@keyframes site-health-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-health-dot--up {
+    animation: none;
+  }
+}
+</style>

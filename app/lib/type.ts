@@ -51,6 +51,7 @@ export type WebsiteList = {
   desc: string // 站点描述
   url: string // 站点 url
   logo: string // logo url
+  health?: WebsiteHealth | null
   color: string // 图标颜色
   tags: string[] // 站点标签
   pinned: boolean // 是否置顶
@@ -98,4 +99,13 @@ export type Social = {
   icon: string // 图标
   url?: string // 跳转地址
   tip?: string // tip 文案
+}
+
+export type WebsiteHealth = {
+  status: 'unknown' | 'up' | 'down'
+  checked_at: string | null
+  http_status: number | null
+  response_time_ms: number | null
+  error_code: string | null
+  consecutive_failures: number
 }
