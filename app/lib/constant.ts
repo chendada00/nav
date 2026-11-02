@@ -7,7 +7,7 @@ export const FooterRecord: Social[] = [
   {
     icon: 'icp.png',
     url: 'https://beian.miit.gov.cn/#/Integrated/index',
-    tip: '京ICP备2022017849号-3'
+    tip: '京ICP备2022017849号-4'
   }
 ]
 

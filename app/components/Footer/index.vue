@@ -26,7 +26,7 @@
           rel="noopener noreferrer"
           class="transition-colors hover:text-primary-500 dark:hover:text-primary-400"
         >
-          京ICP备2022017849号-3
+          京ICP备2022017849号-4
         </a>
       </div>
 
