@@ -135,11 +135,13 @@
 
               <UTooltip :text="healthTooltip(child.health)">
                 <span
-                  class="site-health-dot"
-                  :class="`site-health-dot--${child.health?.status || 'unknown'}`"
+                  class="site-health-indicator"
+                  :class="`site-health-indicator--${child.health?.status || 'unknown'}`"
                   :aria-label="healthTooltip(child.health)"
                   role="img"
-                />
+                >
+                  <span class="site-health-indicator__dot" />
+                </span>
               </UTooltip>
 
               <div class="flex gap-1 absolute top-2 right-2">
@@ -497,45 +499,101 @@ definePageMeta({
 </script>
 
 <style scoped>
-.site-health-dot {
+/*
+ * 状态指示器必须脱离卡片内容流。
+ * 使用更高优先级，覆盖 main.css 中卡片子元素的通用定位规则。
+ */
+.nav-card.card-base > .site-health-indicator {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  width: 9px;
-  height: 9px;
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  border-radius: 9999px;
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+  top: 13px;
+  left: 13px;
+  z-index: 5;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+
+  line-height: 0;
+  pointer-events: auto;
+  cursor: help;
 }
 
-.site-health-dot--up {
-  background: #22c55e;
-  animation: site-health-pulse 2.4s ease-in-out infinite;
-}
+/* 小圆点本体 */
+.site-health-indicator__dot {
+  display: block;
+  flex: 0 0 7px;
 
-.site-health-dot--down {
-  background: #ef4444;
-}
+  width: 7px;
+  height: 7px;
 
-.site-health-dot--unknown {
+  border: 0;
+  border-radius: 50%;
   background: #94a3b8;
+
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.13);
 }
 
-@keyframes site-health-pulse {
+/* 最近检测正常：绿色呼吸光晕 */
+.site-health-indicator--up .site-health-indicator__dot {
+  background: #22c55e;
+  animation: site-health-breathe 2.2s ease-in-out infinite;
+}
+
+/* 连续失败达到阈值：红色，不持续闪烁 */
+.site-health-indicator--down .site-health-indicator__dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.13);
+}
+
+/* 尚无检测结果：灰色 */
+.site-health-indicator--unknown .site-health-indicator__dot {
+  background: #94a3b8;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.13);
+}
+
+/* 仅让外圈柔和扩散，圆点本身保持大小不变 */
+@keyframes site-health-breathe {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.12);
+    box-shadow:
+      0 0 0 2px rgba(34, 197, 94, 0.13),
+      0 0 0 0 rgba(34, 197, 94, 0);
   }
 
   50% {
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.08);
+    box-shadow:
+      0 0 0 2px rgba(34, 197, 94, 0.18),
+      0 0 0 5px rgba(34, 197, 94, 0.08);
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .nav-card.card-base > .site-health-indicator:hover .site-health-indicator__dot {
+    transform: scale(1.12);
+  }
+}
+
+.site-health-indicator__dot {
+  transition: transform 180ms ease;
+}
+
+/* 尊重系统的减少动态效果设置 */
 @media (prefers-reduced-motion: reduce) {
-  .site-health-dot--up {
+  .site-health-indicator--up .site-health-indicator__dot {
     animation: none;
+  }
+
+  .site-health-indicator__dot {
+    transition: none;
   }
 }
 </style>
