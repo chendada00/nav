@@ -21,14 +21,17 @@ function supabaseUrl(path) {
   return `${SUPABASE_URL}/rest/v1/${path}`
 }
 
-async function supabaseGet(path) {
+async function supabaseGet(path, label = path) {
   const response = await fetch(supabaseUrl(path), {
     headers,
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!response.ok) {
-    throw new Error(`Supabase GET failed: HTTP ${response.status}`)
+    const body = await response.text().catch(() => '')
+    throw new Error(
+      `Supabase GET failed (${label}): HTTP ${response.status}; ${body.slice(0, 1000)}`,
+    )
   }
 
   return response.json()
@@ -186,9 +189,10 @@ async function runWithConcurrency(items, worker, concurrency) {
 
 async function main() {
   // 读取现有网站列表；只检测有 URL 的网站。
-  const websites = await supabaseGet(
+    const websites = await supabaseGet(
     'ds_websites?select=id,url&url=not.is.null',
-  )
+    'read ds_websites',
+    )
 
   if (!Array.isArray(websites)) {
     throw new Error('Unexpected website list response from Supabase')
@@ -196,7 +200,8 @@ async function main() {
 
   // 读取上一轮状态，用于连续失败计数。
   const previousRows = await supabaseGet(
-    'ds_website_health?select=website_id,status,consecutive_failures',
+  'ds_website_health?select=website_id,status,consecutive_failures',
+  'read ds_website_health',
   )
 
   const previousById = new Map(
