@@ -1,3 +1,6 @@
+import { lookup } from 'node:dns/promises'
+import { isIP } from 'node:net'
+
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '')
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -56,12 +59,67 @@ async function supabaseUpsert(rows) {
   if (!response.ok) {
     const body = await response.text().catch(() => '')
     throw new Error(
-      `Supabase upsert failed: HTTP ${response.status} ${body.slice(0, 500)}`,
+      `Supabase upsert failed: HTTP ${response.status}; ${body.slice(0, 1000)}`,
     )
   }
 }
 
-function validateWebsiteUrl(rawUrl) {
+function isPrivateIPv4(address) {
+  const parts = address.split('.').map(Number)
+
+  if (
+    parts.length !== 4
+    || parts.some(part => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
+    return true
+  }
+
+  const [a, b] = parts
+
+  return (
+    a === 0
+    || a === 10
+    || a === 127
+    || (a === 100 && b >= 64 && b <= 127)
+    || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168)
+    || (a === 198 && (b === 18 || b === 19))
+    || a >= 224
+  )
+}
+
+function isPrivateIPv6(address) {
+  const value = address.toLowerCase()
+
+  // IPv4-mapped IPv6 地址，例如 ::ffff:127.0.0.1
+  const mapped = value.match(/::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/)
+  if (mapped) return isPrivateIPv4(mapped[1])
+
+  return (
+    value === '::'
+    || value === '::1'
+    || value.startsWith('fc')
+    || value.startsWith('fd')
+    || /^fe[89ab]/.test(value)
+    || value.startsWith('ff')
+  )
+}
+
+function isPrivateAddress(address) {
+  const version = isIP(address)
+
+  if (version === 4) return isPrivateIPv4(address)
+  if (version === 6) return isPrivateIPv6(address)
+
+  return true
+}
+
+async function validateWebsiteUrl(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    throw new Error('invalid_url')
+  }
+
   let parsed
 
   try {
@@ -74,30 +132,97 @@ function validateWebsiteUrl(rawUrl) {
     throw new Error('unsupported_protocol')
   }
 
-  const hostname = parsed.hostname.toLowerCase()
+  if (parsed.username || parsed.password) {
+    throw new Error('invalid_url')
+  }
 
-  // 拒绝本机、内网常见地址和本地域名，避免误测内部服务。
+  const hostname = parsed.hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+
   if (
     hostname === 'localhost'
     || hostname.endsWith('.localhost')
     || hostname.endsWith('.local')
-    || hostname === '::1'
-    || hostname === '[::1]'
-    || /^127\./.test(hostname)
-    || /^10\./.test(hostname)
-    || /^192\.168\./.test(hostname)
-    || /^169\.254\./.test(hostname)
-    || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+    || hostname.endsWith('.internal')
   ) {
-    throw new Error('private_or_local_address')
+    throw new Error('private_address')
+  }
+
+  // 如果 URL 直接使用 IP，立即校验。
+  if (isIP(hostname)) {
+    if (isPrivateAddress(hostname)) {
+      throw new Error('private_address')
+    }
+
+    return parsed
+  }
+
+  // 检查 DNS 返回的所有地址，避免域名直接指向常见内网地址。
+  let addresses
+
+  try {
+    addresses = await lookup(hostname, {
+      all: true,
+      verbatim: true,
+    })
+  } catch {
+    throw new Error('dns_error')
+  }
+
+  if (!addresses.length) {
+    throw new Error('dns_error')
+  }
+
+  if (addresses.some(record => isPrivateAddress(record.address))) {
+    throw new Error('private_address')
   }
 
   return parsed
 }
 
+function getFailureCode(error) {
+  if (error?.message === 'invalid_url') return 'invalid_url'
+  if (error?.message === 'unsupported_protocol') return 'unsupported_protocol'
+  if (error?.message === 'private_address') return 'private_address'
+  if (error?.message === 'dns_error') return 'dns_error'
+
+  const code = error?.cause?.code ?? error?.code
+
+  if (
+    error?.name === 'TimeoutError'
+    || error?.name === 'AbortError'
+    || code === 'ETIMEDOUT'
+  ) {
+    return 'timeout'
+  }
+
+  if (
+    code === 'ENOTFOUND'
+    || code === 'EAI_AGAIN'
+    || code === 'ENODATA'
+  ) {
+    return 'dns_error'
+  }
+
+  if (
+    code === 'CERT_HAS_EXPIRED'
+    || code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+    || code === 'ERR_TLS_CERT_ALTNAME_INVALID'
+    || code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  ) {
+    return 'tls_error'
+  }
+
+  return 'connection_error'
+}
+
 async function checkWebsite(website, previousHealth) {
   const checkedAt = new Date().toISOString()
-  const previousFailures = previousHealth?.consecutive_failures ?? 0
+  const previousFailures = Math.max(
+    0,
+    Number(previousHealth?.consecutive_failures) || 0,
+  )
 
   let status = previousHealth?.status ?? 'unknown'
   let httpStatus = null
@@ -106,11 +231,9 @@ async function checkWebsite(website, previousHealth) {
   let consecutiveFailures = previousFailures
 
   try {
-    const url = validateWebsiteUrl(website.url)
+    const url = await validateWebsiteUrl(website.url)
     const startedAt = performance.now()
 
-    // 不自动跟随跳转，避免跳转到未验证的内部地址。
-    // 3xx 仍视为网站有响应；4xx 也代表服务器可达。
     const response = await fetch(url, {
       method: 'GET',
       redirect: 'manual',
@@ -124,11 +247,13 @@ async function checkWebsite(website, previousHealth) {
     responseTimeMs = Math.round(performance.now() - startedAt)
     httpStatus = response.status
 
-    // 不需要读取网页正文；尽早释放响应体。
+    // 不读取网页正文；尽快释放响应体。
     if (response.body) {
       await response.body.cancel().catch(() => {})
     }
 
+    // 2xx、3xx、4xx 都代表目标服务器返回了 HTTP 响应。
+    // 这代表“有响应”，不保证页面内容或登录功能正常。
     if (response.status >= 200 && response.status < 500) {
       status = 'up'
       consecutiveFailures = 0
@@ -137,19 +262,15 @@ async function checkWebsite(website, previousHealth) {
       consecutiveFailures += 1
       status = consecutiveFailures >= DOWN_AFTER_FAILURES
         ? 'down'
-        : (previousHealth?.status === 'up' ? 'up' : 'unknown')
+        : 'unknown'
       errorCode = `http_${response.status}`
     }
   } catch (error) {
     consecutiveFailures += 1
     status = consecutiveFailures >= DOWN_AFTER_FAILURES
       ? 'down'
-      : (previousHealth?.status === 'up' ? 'up' : 'unknown')
-
-    errorCode = error?.name === 'TimeoutError'
-      || error?.name === 'AbortError'
-      ? 'timeout'
-      : String(error?.message ?? 'request_failed').slice(0, 120)
+      : 'unknown'
+    errorCode = getFailureCode(error)
   }
 
   return {
@@ -171,6 +292,7 @@ async function runWithConcurrency(items, worker, concurrency) {
   async function runWorker() {
     while (true) {
       const index = nextIndex++
+
       if (index >= items.length) return
 
       results[index] = await worker(items[index])
@@ -188,21 +310,23 @@ async function runWithConcurrency(items, worker, concurrency) {
 }
 
 async function main() {
-  // 读取现有网站列表；只检测有 URL 的网站。
-    const websites = await supabaseGet(
+  const websites = await supabaseGet(
     'ds_websites?select=id,url&url=not.is.null',
     'read ds_websites',
-    )
+  )
 
   if (!Array.isArray(websites)) {
     throw new Error('Unexpected website list response from Supabase')
   }
 
-  // 读取上一轮状态，用于连续失败计数。
   const previousRows = await supabaseGet(
-  'ds_website_health?select=website_id,status,consecutive_failures',
-  'read ds_website_health',
+    'ds_website_health?select=website_id,status,consecutive_failures',
+    'read ds_website_health',
   )
+
+  if (!Array.isArray(previousRows)) {
+    throw new Error('Unexpected health list response from Supabase')
+  }
 
   const previousById = new Map(
     previousRows.map(row => [row.website_id, row]),
@@ -219,7 +343,6 @@ async function main() {
     CONCURRENCY,
   )
 
-  // 一次批量写入，避免每个网站单独请求 Supabase。
   await supabaseUpsert(results)
 
   const counts = results.reduce((summary, row) => {
