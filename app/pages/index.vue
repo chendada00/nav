@@ -132,17 +132,19 @@
                   </div>
                 </div>
               </div>
-
-              <UTooltip :text="healthTooltip(child.health)">
-                <span
-                  class="site-health-indicator"
-                  :class="`site-health-indicator--${child.health?.status || 'unknown'}`"
-                  :aria-label="healthTooltip(child.health)"
-                  role="img"
-                >
-                  <span class="site-health-indicator__dot" />
-                </span>
-              </UTooltip>
+              <div
+                class="site-health-corner"
+                :class="`site-health-corner--${child.health?.status || 'unknown'}`"
+                tabindex="0"
+                role="img"
+                :aria-label="healthStatusTitle(child.health)"
+                @mouseenter="showHealthPopover(child.health, $event)"
+                @mouseleave="scheduleHideHealthPopover"
+                @focus="showHealthPopover(child.health, $event)"
+                @blur="scheduleHideHealthPopover"
+              >
+                <span class="site-health-corner__triangle" aria-hidden="true" />
+              </div>
 
               <div class="flex gap-1 absolute top-2 right-2">
                 <UBadge
@@ -181,6 +183,54 @@
         </div>
       </div>
     </template>
+
+    <Teleport to="body">
+      <div
+        v-if="healthPopover"
+        class="site-health-popover"
+        role="tooltip"
+        :style="{
+          left: `${healthPopover.left}px`,
+          top: `${healthPopover.top}px`,
+        }"
+        @mouseenter="cancelHideHealthPopover"
+        @mouseleave="scheduleHideHealthPopover"
+      >
+        <div class="site-health-popover__heading">
+          <span
+            class="site-health-popover__status"
+            :class="`site-health-popover__status--${healthPopover.status}`"
+          />
+          <span>{{ healthPopover.title }}</span>
+        </div>
+
+        <div class="site-health-popover__time">
+          {{ healthPopover.checkedAt }}
+        </div>
+
+        <div class="site-health-popover__details">
+          <div class="site-health-popover__row">
+            <span>HTTP 状态</span>
+            <strong>{{ healthPopover.httpStatus }}</strong>
+          </div>
+          <div class="site-health-popover__row">
+            <span>响应耗时</span>
+            <strong>{{ healthPopover.responseTime }}</strong>
+          </div>
+          <div class="site-health-popover__row">
+            <span>连续失败</span>
+            <strong>{{ healthPopover.failures }} 次</strong>
+          </div>
+        </div>
+
+        <div
+          v-if="healthPopover.error"
+          class="site-health-popover__error"
+        >
+          {{ healthPopover.error }}
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -201,37 +251,120 @@ import type {
   WebsiteHealth,
 } from '~/lib/type'
 
-const healthTooltip = (health?: WebsiteHealth | null) => {
+type HealthPopoverState = {
+  status: 'up' | 'down' | 'unknown'
+  title: string
+  checkedAt: string
+  httpStatus: string | number
+  responseTime: string
+  failures: number
+  error: string
+  left: number
+  top: number
+}
+
+const healthPopover = ref<HealthPopoverState | null>(null)
+
+let healthPopoverHideTimer: ReturnType<typeof setTimeout> | undefined
+
+const healthStatusTitle = (health?: WebsiteHealth | null) => {
   if (!health || health.status === 'unknown') {
-    return '尚无检测结果'
+    return health?.consecutive_failures
+      ? '检测异常，等待复核'
+      : '尚无检测结果'
   }
 
-  const checkedAt = health.checked_at
-    ? new Date(health.checked_at).toLocaleString()
-    : '时间未知'
+  return health.status === 'up'
+    ? '网站有响应'
+    : '网站暂不可达'
+}
 
-  const statusText = health.status === 'up'
-    ? '最近检测：可访问'
-    : '最近检测：暂不可达'
+const healthCheckedAt = (health?: WebsiteHealth | null) => {
+  if (!health?.checked_at) return '尚未检测'
 
-  const details = [
-    statusText,
-    `检测时间：${checkedAt}`,
-  ]
+  const date = new Date(health.checked_at)
 
-  if (health.http_status !== null) {
-    details.push(`HTTP 状态：${health.http_status}`)
+  return Number.isNaN(date.getTime())
+    ? '检测时间未知'
+    : date.toLocaleString()
+}
+
+const healthErrorText = (errorCode?: string | null) => {
+  if (!errorCode) return ''
+
+  if (errorCode === 'timeout') return '请求超时'
+  if (errorCode === 'dns_error') return '域名解析失败'
+  if (errorCode === 'tls_error') return 'HTTPS 连接失败'
+  if (errorCode === 'connection_error') return '连接失败'
+  if (errorCode === 'private_address') return '目标地址不允许检测'
+  if (errorCode === 'invalid_url') return '网址格式无效'
+  if (errorCode === 'unsupported_protocol') return '不支持的网址协议'
+
+  if (errorCode.startsWith('http_')) {
+    return `服务器返回 HTTP ${errorCode.slice(5)}`
   }
 
-  if (health.response_time_ms !== null) {
-    details.push(`响应耗时：${health.response_time_ms} ms`)
-  }
+  return '本次检测未成功'
+}
 
-  if (health.consecutive_failures > 0) {
-    details.push(`连续失败：${health.consecutive_failures} 次`)
+const cancelHideHealthPopover = () => {
+  if (healthPopoverHideTimer) {
+    clearTimeout(healthPopoverHideTimer)
+    healthPopoverHideTimer = undefined
   }
+}
 
-  return details.join('\n')
+const scheduleHideHealthPopover = () => {
+  cancelHideHealthPopover()
+
+  healthPopoverHideTimer = setTimeout(() => {
+    healthPopover.value = null
+    healthPopoverHideTimer = undefined
+  }, 140)
+}
+
+const showHealthPopover = (
+  health: WebsiteHealth | null | undefined,
+  event: MouseEvent | FocusEvent,
+) => {
+  cancelHideHealthPopover()
+
+  const target = event.currentTarget
+
+  if (!(target instanceof HTMLElement)) return
+
+  const card = target.closest('.nav-card')
+  if (!(card instanceof HTMLElement)) return
+
+  const rect = card.getBoundingClientRect()
+  const popoverWidth = 236
+  const popoverEstimatedHeight = 170
+  const gap = 8
+
+  const left = Math.max(
+    12,
+    Math.min(rect.left, window.innerWidth - popoverWidth - 12),
+  )
+
+  const top = rect.bottom + popoverEstimatedHeight + gap <= window.innerHeight
+    ? rect.bottom + gap
+    : Math.max(12, rect.top - popoverEstimatedHeight - gap)
+
+  const status = health?.status ?? 'unknown'
+
+  healthPopover.value = {
+    status,
+    title: healthStatusTitle(health),
+    checkedAt: healthCheckedAt(health),
+    httpStatus: health?.http_status ?? '—',
+    responseTime: health?.response_time_ms != null
+      ? `${health.response_time_ms} ms`
+      : '—',
+    failures: health?.consecutive_failures ?? 0,
+    error: healthErrorText(health?.error_code),
+    left,
+    top,
+  }
 }
 
 const toast = useToast();
@@ -500,99 +633,260 @@ definePageMeta({
 
 <style scoped>
 /*
- * 状态指示器必须脱离卡片内容流。
- * 使用更高优先级，覆盖 main.css 中卡片子元素的通用定位规则。
+ * 左上角状态三角。
+ * 不显示圆点，颜色本身表达状态。
+ * 卡片本身 overflow:hidden，因此涟漪只在卡片内部扩散。
  */
-.nav-card.card-base > .site-health-indicator {
+.nav-card.card-base > .site-health-corner {
   position: absolute;
-  top: 13px;
-  left: 13px;
+  top: 0;
+  left: 0;
   z-index: 5;
 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 1px;
-  height: 1px;
+  width: 42px;
+  height: 42px;
   margin: 0;
   padding: 0;
 
   border: 0;
-  border-radius: 50%;
+  border-radius: inherit;
   background: transparent;
 
-  line-height: 0;
-  pointer-events: auto;
   cursor: help;
+  outline: none;
 }
 
-/* 小圆点本体 */
-.site-health-indicator__dot {
-  display: block;
-  flex: 0 0 7px;
+/* 角标三角形 */
+.site-health-corner__triangle {
+  position: absolute;
+  inset: 0;
 
+  display: block;
+  width: 30px;
+  height: 30px;
+
+  border-top-left-radius: inherit;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+
+  background: rgba(148, 163, 184, 0.13);
+  transition: background-color 180ms ease;
+}
+
+.site-health-corner--up .site-health-corner__triangle {
+  background: rgba(34, 160, 107, 0.16);
+}
+
+.site-health-corner--down .site-health-corner__triangle {
+  background: rgba(220, 98, 98, 0.16);
+}
+
+.site-health-corner--unknown .site-health-corner__triangle {
+  background: rgba(148, 163, 184, 0.13);
+}
+
+/*
+ * 悬浮涟漪：从左上角三角区域中心向外圆形扩散，正圆，不斜向畸变
+ * 三角区域大概位置：(21px,21px) 作为涟漪扩散原点
+ */
+.site-health-corner::after {
+  content: "";
+  position: absolute;
+  /* 把涟漪圆心定位到三角块中心（30px三角的中心点） */
+  top: 15px;
+  left: 15px;
+  z-index: -1;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center center;
+  pointer-events: none;
+  transition:
+    transform 320ms cubic-bezier(0.21, 0, 0.27, 1),
+    opacity 200ms ease;
+}
+
+.site-health-corner--up::after {
+  background: radial-gradient(
+    circle,
+    rgba(34, 160, 107, 0.22),
+    rgba(34, 160, 107, 0.06) 60%,
+    transparent 72%
+  );
+}
+.site-health-corner--down::after {
+  background: radial-gradient(
+    circle,
+    rgba(220, 98, 98, 0.22),
+    rgba(220, 98, 98, 0.06) 60%,
+    transparent 72%
+  );
+}
+.site-health-corner--unknown::after {
+  background: radial-gradient(
+    circle,
+    rgba(148, 163, 184, 0.20),
+    rgba(148, 163, 184, 0.06) 60%,
+    transparent 72%
+  );
+}
+
+.site-health-corner:hover::after,
+.site-health-corner:focus-visible::after {
+  opacity: 1;
+  transform: scale(2.8);
+}
+
+/* 暗色主题降低涟漪亮度 */
+html.dark .site-health-corner--up::after {
+  background: radial-gradient(
+    circle,
+    rgba(74, 222, 128, 0.20),
+    rgba(74, 222, 128, 0.05) 60%,
+    transparent 72%
+  );
+}
+html.dark .site-health-corner--down::after {
+  background: radial-gradient(
+    circle,
+    rgba(248, 113, 113, 0.20),
+    rgba(248, 113, 113, 0.05) 60%,
+    transparent 72%
+  );
+}
+
+/* 通过 Teleport 挂到 body，避免被卡片 overflow:hidden 裁切 */
+.site-health-popover {
+  position: fixed;
+  z-index: 9999;
+
+  width: 236px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 12px 13px;
+
+  color: #334155;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.13),
+    0 2px 8px rgba(15, 23, 42, 0.05);
+
+  line-height: 1.45;
+  text-align: left;
+  pointer-events: auto;
+  animation: health-popover-in 140ms ease-out;
+}
+
+html.dark .site-health-popover {
+  color: #e2e8f0;
+  background: rgba(30, 29, 45, 0.97);
+  border-color: rgba(167, 139, 250, 0.18);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+@keyframes health-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-health-popover__heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.site-health-popover__status {
+  flex: 0 0 7px;
   width: 7px;
   height: 7px;
-
-  border: 0;
   border-radius: 50%;
-  background: #94a3b8;
-
-  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.13);
+  background: #a1a1aa;
 }
 
-/* 最近检测正常：绿色呼吸光晕 */
-.site-health-indicator--up .site-health-indicator__dot {
-  background: #22c55e;
-  animation: site-health-breathe 2.2s ease-in-out infinite;
+.site-health-popover__status--up {
+  background: #22a06b;
 }
 
-/* 连续失败达到阈值：红色，不持续闪烁 */
-.site-health-indicator--down .site-health-indicator__dot {
-  background: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.13);
+.site-health-popover__status--down {
+  background: #dc6262;
 }
 
-/* 尚无检测结果：灰色 */
-.site-health-indicator--unknown .site-health-indicator__dot {
-  background: #94a3b8;
-  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.13);
+.site-health-popover__status--unknown {
+  background: #a1a1aa;
 }
 
-/* 仅让外圈柔和扩散，圆点本身保持大小不变 */
-@keyframes site-health-breathe {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(34, 197, 94, 0.13),
-      0 0 0 0 rgba(34, 197, 94, 0);
-  }
-
-  50% {
-    box-shadow:
-      0 0 0 2px rgba(34, 197, 94, 0.18),
-      0 0 0 5px rgba(34, 197, 94, 0.08);
-  }
+.site-health-popover__time {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 11px;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .nav-card.card-base > .site-health-indicator:hover .site-health-indicator__dot {
-    transform: scale(1.12);
-  }
+html.dark .site-health-popover__time {
+  color: #a1a1b5;
 }
 
-.site-health-indicator__dot {
-  transition: transform 180ms ease;
+.site-health-popover__details {
+  display: grid;
+  gap: 6px;
+
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
 }
 
-/* 尊重系统的减少动态效果设置 */
+.site-health-popover__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  font-size: 12px;
+}
+
+.site-health-popover__row > span {
+  color: #94a3b8;
+}
+
+.site-health-popover__row > strong {
+  color: inherit;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-health-popover__error {
+  margin-top: 9px;
+  padding: 6px 8px;
+
+  color: #a16262;
+  background: rgba(239, 68, 68, 0.07);
+  border-radius: 7px;
+
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+html.dark .site-health-popover__error {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.09);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .site-health-indicator--up .site-health-indicator__dot {
+  .site-health-corner::after,
+  .site-health-popover {
     animation: none;
-  }
-
-  .site-health-indicator__dot {
     transition: none;
   }
 }

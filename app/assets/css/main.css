@@ -1026,19 +1026,3 @@ html.dark .site-desc-text {
     display: none;
   }
 }
-
-
-/* =========================================
-   网站检测状态点
-   必须排除通用卡片内容定位规则，避免状态点进入描述行
-   ========================================= */
-
-  .nav-card.card-base > .site-health-indicator {
-  position: absolute;
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-}
