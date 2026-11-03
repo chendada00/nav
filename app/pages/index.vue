@@ -225,7 +225,13 @@
           v-if="healthPopover.error"
           class="site-health-popover__error"
         >
-          {{ healthPopover.error }}
+          <span class="site-health-popover__error-label">
+            异常原因
+          </span>
+
+          <span class="site-health-popover__error-message">
+            {{ healthPopover.error }}
+          </span>
         </div>
       </div>
     </Teleport>
@@ -290,19 +296,39 @@ const healthCheckedAt = (health?: WebsiteHealth | null) => {
 const healthErrorText = (errorCode?: string | null) => {
   if (!errorCode) return ''
 
-  if (errorCode === 'timeout') return '请求超时'
-  if (errorCode === 'dns_error') return '域名解析失败'
-  if (errorCode === 'tls_error') return 'HTTPS 连接失败'
-  if (errorCode === 'connection_error') return '连接失败'
-  if (errorCode === 'private_address') return '目标地址不允许检测'
-  if (errorCode === 'invalid_url') return '网址格式无效'
-  if (errorCode === 'unsupported_protocol') return '不支持的网址协议'
-
-  if (errorCode.startsWith('http_')) {
-    return `服务器返回 HTTP ${errorCode.slice(5)}`
+  const errorMessages: Record<string, string> = {
+    timeout: '请求超时，目标网站未及时响应',
+    dns_error: '域名解析失败，无法找到目标服务器',
+    tls_error: 'HTTPS 证书校验或安全连接失败',
+    connection_error: '网络连接失败，无法连接目标服务器',
+    private_address: '目标地址被安全策略拦截',
+    invalid_url: '网站地址格式无效',
+    unsupported_protocol: '不支持的网站协议',
   }
 
-  return '本次检测未成功'
+  // 固定错误码直接转换为中文
+  if (errorMessages[errorCode]) {
+    return errorMessages[errorCode]
+  }
+
+  // HTTP 状态码异常
+  if (errorCode.startsWith('http_')) {
+    const statusCode = Number(errorCode.slice(5))
+
+    const httpMessages: Record<number, string> = {
+      500: '服务器内部错误',
+      501: '服务器不支持当前请求',
+      502: '网关错误，服务器未收到有效响应',
+      503: '服务器暂时不可用',
+      504: '网关请求超时',
+    }
+
+    return httpMessages[statusCode]
+      ? `${httpMessages[statusCode]}（HTTP ${statusCode}）`
+      : `服务器返回异常（HTTP ${statusCode}）`
+  }
+
+  return '检测过程中发生未知异常'
 }
 
 const cancelHideHealthPopover = () => {
@@ -336,7 +362,7 @@ const showHealthPopover = (
 
   const rect = card.getBoundingClientRect()
   const popoverWidth = 252
-  const popoverEstimatedHeight = 158
+  const popoverEstimatedHeight = 190
   const gap = 8
 
   const left = Math.max(
@@ -1033,14 +1059,22 @@ html.dark .site-health-popover__http--unknown {
    错误信息
    ========================================= */
 
-.site-health-popover__error {
-  margin-top: 11px;
-  padding: 8px 10px;
+/* =========================================
+   错误信息
+   ========================================= */
 
-  color: #a16262;
+.site-health-popover__error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  margin-top: 11px;
+  padding: 9px 11px;
+
+  color: #a94444;
 
   background: rgba(239, 68, 68, 0.065);
-  border: 1px solid rgba(239, 68, 68, 0.09);
+  border: 1px solid rgba(239, 68, 68, 0.13);
   border-radius: 9px;
 
   font-size: 11px;
@@ -1049,11 +1083,25 @@ html.dark .site-health-popover__http--unknown {
   overflow-wrap: anywhere;
 }
 
+.site-health-popover__error-label {
+  font-size: 10px;
+  font-weight: 650;
+  color: #c05b5b;
+}
+
+.site-health-popover__error-message {
+  font-weight: 500;
+}
+
 html.dark .site-health-popover__error {
   color: #fca5a5;
 
   background: rgba(239, 68, 68, 0.09);
-  border-color: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.16);
+}
+
+html.dark .site-health-popover__error-label {
+  color: #fda4af;
 }
 
 /* =========================================
@@ -1080,6 +1128,12 @@ html.dark .site-health-popover__error {
   min-width: 0;
 }
 
+
+/* =========================================
+   网站标签：柔和彩色胶囊
+   固定文字颜色，随机颜色只负责装饰
+   ========================================= */
+
 .category-tag-pill {
   display: inline-flex;
   align-items: center;
@@ -1088,13 +1142,17 @@ html.dark .site-health-popover__error {
   max-width: 100%;
   padding: 3px 9px;
 
-  color: rgb(var(--tag-rgb));
-  background: rgba(var(--tag-rgb), 0.10);
-  border: 1px solid rgba(var(--tag-rgb), 0.17);
+  /* 固定深色文字，确保浅色背景下清晰 */
+  color: #475569;
+
+  /* 随机颜色只用于背景和边框 */
+  background: rgba(var(--tag-rgb), 0.13);
+  border: 1px solid rgba(var(--tag-rgb), 0.25);
+
   border-radius: 999px;
 
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
 
@@ -1106,22 +1164,23 @@ html.dark .site-health-popover__error {
 
 /* 暗色模式 */
 html.dark .category-tag-pill {
-  color: rgb(var(--tag-rgb));
-  background: rgba(var(--tag-rgb), 0.15);
-  border-color: rgba(var(--tag-rgb), 0.25);
+  color: #e2e8f0;
+
+  background: rgba(var(--tag-rgb), 0.19);
+  border-color: rgba(var(--tag-rgb), 0.30);
 }
 
-/* 鼠标悬停：轻微上浮 */
+/* 鼠标悬停 */
 @media (hover: hover) and (pointer: fine) {
   .category-tag-pill:hover {
-    background: rgba(var(--tag-rgb), 0.17);
-    border-color: rgba(var(--tag-rgb), 0.30);
+    background: rgba(var(--tag-rgb), 0.20);
+    border-color: rgba(var(--tag-rgb), 0.36);
     transform: translateY(-1px);
   }
 
   html.dark .category-tag-pill:hover {
-    background: rgba(var(--tag-rgb), 0.23);
-    border-color: rgba(var(--tag-rgb), 0.35);
+    background: rgba(var(--tag-rgb), 0.26);
+    border-color: rgba(var(--tag-rgb), 0.42);
   }
 }
 
