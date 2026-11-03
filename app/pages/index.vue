@@ -85,21 +85,16 @@
                     </div>
 
                     <div
-                      class="category-tag flex flex-wrap gap-1 items-center text-xs text-slate-400 font-thin"
+                      class="category-tag flex flex-wrap gap-1.5 items-center"
                     >
-                      <template
+                      <span
                         v-for="(tag, index) in child.tags"
-                        :key="index"
+                        :key="`${child.id}-${index}`"
+                        class="category-tag-pill"
+                        :style="getTagStyle(tag, child.id, index)"
                       >
-                        <UBadge
-                          color="neutral"
-                          variant="soft"
-                          class="rounded-full"
-                          size="sm"
-                        >
-                          {{ tag }}
-                        </UBadge>
-                      </template>
+                        {{ tag }}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -211,15 +206,18 @@
         <div class="site-health-popover__details">
           <div class="site-health-popover__row">
             <span>HTTP 状态</span>
-            <strong>{{ healthPopover.httpStatus }}</strong>
+
+            <strong
+              class="site-health-popover__http"
+              :class="`site-health-popover__http--${healthPopover.status}`"
+            >
+              {{ healthPopover.httpStatus }}
+            </strong>
           </div>
+
           <div class="site-health-popover__row">
             <span>响应耗时</span>
             <strong>{{ healthPopover.responseTime }}</strong>
-          </div>
-          <div class="site-health-popover__row">
-            <span>连续失败</span>
-            <strong>{{ healthPopover.failures }} 次</strong>
           </div>
         </div>
 
@@ -337,8 +335,8 @@ const showHealthPopover = (
   if (!(card instanceof HTMLElement)) return
 
   const rect = card.getBoundingClientRect()
-  const popoverWidth = 236
-  const popoverEstimatedHeight = 170
+  const popoverWidth = 252
+  const popoverEstimatedHeight = 158
   const gap = 8
 
   const left = Math.max(
@@ -368,6 +366,47 @@ const showHealthPopover = (
 }
 
 const toast = useToast();
+
+// =========================================
+// 网站标签：柔和随机配色
+// =========================================
+
+const TAG_COLOR_PALETTE = [
+  '125, 153, 225', // 清新蓝
+  '130, 177, 160', // 薄荷绿
+  '202, 164, 125', // 奶油橙
+  '177, 151, 205', // 淡紫色
+  '218, 155, 160', // 柔和粉
+  '125, 177, 190', // 浅青色
+]
+
+// 根据字符串生成稳定哈希值
+const getTagHash = (value: string) => {
+  let hash = 0
+
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0
+  }
+
+  return Math.abs(hash)
+}
+
+// 获取标签颜色
+const getTagStyle = (
+  tag: string,
+  websiteId: number,
+  index: number,
+) => {
+  const hash = getTagHash(`${websiteId}-${tag}-${index}`)
+
+  const color = TAG_COLOR_PALETTE[
+    hash % TAG_COLOR_PALETTE.length
+  ]
+
+  return {
+    '--tag-rgb': color,
+  }
+}
 
 // 每个分类独立保存折叠状态
 const collapsedStates = ref<Record<number, boolean>>({});
@@ -756,101 +795,195 @@ html.dark .site-health-corner--down::after {
   );
 }
 
-/* 通过 Teleport 挂到 body，避免被卡片 overflow:hidden 裁切 */
+/* =========================================
+   网站状态详情卡片
+   ========================================= */
+
+/* 卡片主体 */
 .site-health-popover {
   position: fixed;
   z-index: 9999;
 
-  width: 236px;
+  width: 252px;
   max-width: calc(100vw - 24px);
   box-sizing: border-box;
-  padding: 12px 13px;
+
+  padding: 14px;
 
   color: #334155;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 12px;
-  box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.13),
-    0 2px 8px rgba(15, 23, 42, 0.05);
 
-  line-height: 1.45;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 14px;
+
+  box-shadow:
+    0 12px 34px rgba(15, 23, 42, 0.12),
+    0 3px 10px rgba(15, 23, 42, 0.045),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+
+  line-height: 1.5;
   text-align: left;
+
   pointer-events: auto;
-  animation: health-popover-in 140ms ease-out;
+
+  animation: health-popover-in 180ms
+    cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* 暗色模式 */
 html.dark .site-health-popover {
   color: #e2e8f0;
-  background: rgba(30, 29, 45, 0.97);
-  border-color: rgba(167, 139, 250, 0.18);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+
+  background: rgba(30, 29, 45, 0.96);
+  border-color: rgba(167, 139, 250, 0.19);
+
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.28),
+    0 3px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
+/* 弹出动画 */
 @keyframes health-popover-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px) scale(0.985);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
+
+/* =========================================
+   状态标题
+   ========================================= */
 
 .site-health-popover__heading {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
+
+  min-height: 17px;
 
   font-size: 13px;
   font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
+/* 状态圆点基础样式 */
 .site-health-popover__status {
-  flex: 0 0 7px;
-  width: 7px;
-  height: 7px;
+  position: relative;
+
+  flex: 0 0 8px;
+
+  width: 8px;
+  height: 8px;
+
   border-radius: 50%;
   background: #a1a1aa;
 }
 
+/* 正常：绿色呼吸 */
 .site-health-popover__status--up {
   background: #22a06b;
+
+  animation: health-status-breathe-up 2s ease-in-out infinite;
 }
 
+/* 异常：红色呼吸 */
 .site-health-popover__status--down {
   background: #dc6262;
+
+  animation: health-status-breathe-down 2s ease-in-out infinite;
 }
 
+/* 未知：保持静态 */
 .site-health-popover__status--unknown {
   background: #a1a1aa;
 }
 
+/* 绿色呼吸动画 */
+@keyframes health-status-breathe-up {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(34, 160, 107, 0.30),
+      0 0 5px rgba(34, 160, 107, 0.15);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(34, 160, 107, 0),
+      0 0 9px rgba(34, 160, 107, 0.30);
+    transform: scale(1.12);
+  }
+}
+
+/* 红色呼吸动画 */
+@keyframes health-status-breathe-down {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(220, 98, 98, 0.30),
+      0 0 5px rgba(220, 98, 98, 0.15);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(220, 98, 98, 0),
+      0 0 9px rgba(220, 98, 98, 0.30);
+    transform: scale(1.12);
+  }
+}
+
+/* =========================================
+   检测时间
+   ========================================= */
+
 .site-health-popover__time {
-  margin-top: 5px;
+  margin-top: 7px;
+  padding-left: 17px;
+
   color: #94a3b8;
+
   font-size: 11px;
+  line-height: 1.5;
 }
 
 html.dark .site-health-popover__time {
   color: #a1a1b5;
 }
 
+/* =========================================
+   检测详情
+   ========================================= */
+
 .site-health-popover__details {
   display: grid;
-  gap: 6px;
+  gap: 9px;
 
-  margin-top: 10px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  margin-top: 12px;
+  padding-top: 11px;
+
+  border-top: 1px solid rgba(148, 163, 184, 0.17);
+}
+
+html.dark .site-health-popover__details {
+  border-top-color: rgba(167, 139, 250, 0.14);
 }
 
 .site-health-popover__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 12px;
 
   font-size: 12px;
@@ -858,36 +991,169 @@ html.dark .site-health-popover__time {
 
 .site-health-popover__row > span {
   color: #94a3b8;
+  font-weight: 450;
 }
 
 .site-health-popover__row > strong {
   color: inherit;
+
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.site-health-popover__error {
-  margin-top: 9px;
-  padding: 6px 8px;
+/* HTTP 状态胶囊 */
+.site-health-popover__http {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  color: #a16262;
-  background: rgba(239, 68, 68, 0.07);
-  border-radius: 7px;
+  min-width: 42px;
+  padding: 2px 9px;
+
+  border-radius: 999px;
 
   font-size: 11px;
+  font-weight: 650;
+}
+
+/* 正常状态 */
+.site-health-popover__http--up {
+  color: #16845a;
+  background: rgba(34, 160, 107, 0.10);
+}
+
+/* 异常状态 */
+.site-health-popover__http--down {
+  color: #cf5555;
+  background: rgba(220, 98, 98, 0.10);
+}
+
+/* 未知状态 */
+.site-health-popover__http--unknown {
+  color: #85858f;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+html.dark .site-health-popover__http--up {
+  color: #6ee7a8;
+  background: rgba(34, 160, 107, 0.16);
+}
+
+html.dark .site-health-popover__http--down {
+  color: #fca5a5;
+  background: rgba(220, 98, 98, 0.16);
+}
+
+html.dark .site-health-popover__http--unknown {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+/* =========================================
+   错误信息
+   ========================================= */
+
+.site-health-popover__error {
+  margin-top: 11px;
+  padding: 8px 10px;
+
+  color: #a16262;
+
+  background: rgba(239, 68, 68, 0.065);
+  border: 1px solid rgba(239, 68, 68, 0.09);
+  border-radius: 9px;
+
+  font-size: 11px;
+  line-height: 1.6;
+
   overflow-wrap: anywhere;
 }
 
 html.dark .site-health-popover__error {
   color: #fca5a5;
+
   background: rgba(239, 68, 68, 0.09);
+  border-color: rgba(239, 68, 68, 0.12);
 }
+
+/* =========================================
+   减少动态效果：尊重系统无障碍设置
+   ========================================= */
 
 @media (prefers-reduced-motion: reduce) {
   .site-health-corner::after,
-  .site-health-popover {
-    animation: none;
+  .site-health-popover,
+  .site-health-popover__status {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =========================================
+   网站标签：柔和彩色胶囊
+   ========================================= */
+
+.category-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.category-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  max-width: 100%;
+  padding: 3px 9px;
+
+  color: rgb(var(--tag-rgb));
+  background: rgba(var(--tag-rgb), 0.10);
+  border: 1px solid rgba(var(--tag-rgb), 0.17);
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    transform 220ms ease;
+}
+
+/* 暗色模式 */
+html.dark .category-tag-pill {
+  color: rgb(var(--tag-rgb));
+  background: rgba(var(--tag-rgb), 0.15);
+  border-color: rgba(var(--tag-rgb), 0.25);
+}
+
+/* 鼠标悬停：轻微上浮 */
+@media (hover: hover) and (pointer: fine) {
+  .category-tag-pill:hover {
+    background: rgba(var(--tag-rgb), 0.17);
+    border-color: rgba(var(--tag-rgb), 0.30);
+    transform: translateY(-1px);
+  }
+
+  html.dark .category-tag-pill:hover {
+    background: rgba(var(--tag-rgb), 0.23);
+    border-color: rgba(var(--tag-rgb), 0.35);
+  }
+}
+
+/* 减少动态效果 */
+@media (prefers-reduced-motion: reduce) {
+  .category-tag-pill {
     transition: none;
+  }
+
+  .category-tag-pill:hover {
+    transform: none;
   }
 }
 </style>
