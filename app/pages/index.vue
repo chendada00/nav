@@ -708,7 +708,7 @@ definePageMeta({
   clip-path: polygon(0 0, 100% 0, 0 100%);
 
   background: rgba(148, 163, 184, 0.13);
-  transition: background-color 180ms ease;
+  transition: background-color 240ms ease;
 }
 
 .site-health-corner--up .site-health-corner__triangle {
@@ -723,76 +723,56 @@ definePageMeta({
   background: rgba(148, 163, 184, 0.13);
 }
 
-/*
- * 悬浮涟漪：从左上角三角区域中心向外圆形扩散，正圆，不斜向畸变
- * 三角区域大概位置：(21px,21px) 作为涟漪扩散原点
- */
-.site-health-corner::after {
-  content: "";
-  position: absolute;
-  /* 把涟漪圆心定位到三角块中心（30px三角的中心点） */
-  top: 15px;
-  left: 15px;
-  z-index: -1;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(0);
-  transform-origin: center center;
-  pointer-events: none;
-  transition:
-    transform 320ms cubic-bezier(0.21, 0, 0.27, 1),
-    opacity 200ms ease;
+/* =========================================
+   状态角标：柔和的提亮反馈
+   不再使用圆形扩散动画
+   ========================================= */
+
+/* 正常状态 */
+.site-health-corner--up .site-health-corner__triangle {
+  background: rgba(34, 160, 107, 0.16);
 }
 
-.site-health-corner--up::after {
-  background: radial-gradient(
-    circle,
-    rgba(34, 160, 107, 0.22),
-    rgba(34, 160, 107, 0.06) 60%,
-    transparent 72%
-  );
-}
-.site-health-corner--down::after {
-  background: radial-gradient(
-    circle,
-    rgba(220, 98, 98, 0.22),
-    rgba(220, 98, 98, 0.06) 60%,
-    transparent 72%
-  );
-}
-.site-health-corner--unknown::after {
-  background: radial-gradient(
-    circle,
-    rgba(148, 163, 184, 0.20),
-    rgba(148, 163, 184, 0.06) 60%,
-    transparent 72%
-  );
+/* 鼠标悬停时轻微提亮 */
+.site-health-corner--up:hover .site-health-corner__triangle,
+.site-health-corner--up:focus-visible .site-health-corner__triangle {
+  background: rgba(34, 160, 107, 0.24);
 }
 
-.site-health-corner:hover::after,
-.site-health-corner:focus-visible::after {
-  opacity: 1;
-  transform: scale(2.8);
+/* 异常状态 */
+.site-health-corner--down .site-health-corner__triangle {
+  background: rgba(220, 98, 98, 0.16);
 }
 
-/* 暗色主题降低涟漪亮度 */
-html.dark .site-health-corner--up::after {
-  background: radial-gradient(
-    circle,
-    rgba(74, 222, 128, 0.20),
-    rgba(74, 222, 128, 0.05) 60%,
-    transparent 72%
-  );
+.site-health-corner--down:hover .site-health-corner__triangle,
+.site-health-corner--down:focus-visible .site-health-corner__triangle {
+  background: rgba(220, 98, 98, 0.24);
 }
-html.dark .site-health-corner--down::after {
-  background: radial-gradient(
-    circle,
-    rgba(248, 113, 113, 0.20),
-    rgba(248, 113, 113, 0.05) 60%,
-    transparent 72%
-  );
+
+/* 未知状态 */
+.site-health-corner--unknown .site-health-corner__triangle {
+  background: rgba(148, 163, 184, 0.13);
+}
+
+.site-health-corner--unknown:hover .site-health-corner__triangle,
+.site-health-corner--unknown:focus-visible .site-health-corner__triangle {
+  background: rgba(148, 163, 184, 0.20);
+}
+
+/* 暗色模式：颜色稍微增强，但不增加光晕 */
+html.dark .site-health-corner--up:hover .site-health-corner__triangle,
+html.dark .site-health-corner--up:focus-visible .site-health-corner__triangle {
+  background: rgba(74, 222, 128, 0.25);
+}
+
+html.dark .site-health-corner--down:hover .site-health-corner__triangle,
+html.dark .site-health-corner--down:focus-visible .site-health-corner__triangle {
+  background: rgba(248, 113, 113, 0.25);
+}
+
+html.dark .site-health-corner--unknown:hover .site-health-corner__triangle,
+html.dark .site-health-corner--unknown:focus-visible .site-health-corner__triangle {
+  background: rgba(148, 163, 184, 0.22);
 }
 
 /* =========================================
@@ -1081,7 +1061,6 @@ html.dark .site-health-popover__error {
    ========================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .site-health-corner::after,
   .site-health-popover,
   .site-health-popover__status {
     animation: none !important;

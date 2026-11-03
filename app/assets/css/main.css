@@ -439,33 +439,6 @@ html.dark .nav-card.card-base {
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
-/* 悬停渐变边框：只改变边框，不覆盖卡片内容 */
-.nav-card.card-base::after {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-
-  box-sizing: border-box;
-  border: 20px solid transparent;
-  border-radius: inherit;
-  pointer-events: none;
-
-  background:
-    linear-gradient(transparent, transparent) padding-box,
-    linear-gradient(
-      125deg,
-      rgba(139, 92, 246, 0.25),
-      rgba(99, 102, 241, 0.20) 45%,
-      rgba(59, 130, 246, 0.18) 75%,
-      rgba(6, 182, 212, 0.1)
-    ) border-box;
-
-  opacity: 0;
-  transition: opacity 440ms ease;
-}
- 
-
 /* 内容保持在扫光层和描边层之上 */
 .nav-card.card-base > * {
   position: relative;
@@ -495,15 +468,14 @@ html.dark .nav-card.card-base {
 @media (hover: hover) and (pointer: fine) {
   .nav-card.card-base:hover {
     background: var(--nav-card-bg);
-    border-color: rgba(139, 92, 246, 0.35);
-    box-shadow:
-      0 5px 16px rgba(91, 60, 160, 0.09),
-      0 1px 4px rgba(91, 60, 160, 0.04);
-    transform: translateY(-2px);
-  }
 
-  .nav-card.card-base:hover::after {
-    opacity: 1;
+    border-color: rgba(139, 92, 246, 0.30);
+
+    box-shadow:
+      0 4px 12px rgba(91, 60, 160, 0.055),
+      0 1px 3px rgba(91, 60, 160, 0.025);
+
+    transform: translateY(-3px);
   }
 
   .nav-card.card-base:hover .nav-card-title {
