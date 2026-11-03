@@ -219,6 +219,8 @@ function getFailureCode(error) {
 
 async function checkWebsite(website, previousHealth) {
   const checkedAt = new Date().toISOString()
+  const startedAt = performance.now()
+
   const previousFailures = Math.max(
     0,
     Number(previousHealth?.consecutive_failures) || 0,
@@ -232,7 +234,6 @@ async function checkWebsite(website, previousHealth) {
 
   try {
     const url = await validateWebsiteUrl(website.url)
-    const startedAt = performance.now()
 
     const response = await fetch(url, {
       method: 'GET',
@@ -244,16 +245,12 @@ async function checkWebsite(website, previousHealth) {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
 
-    responseTimeMs = Math.round(performance.now() - startedAt)
     httpStatus = response.status
 
-    // 不读取网页正文；尽快释放响应体。
     if (response.body) {
       await response.body.cancel().catch(() => {})
     }
 
-    // 2xx、3xx、4xx 都代表目标服务器返回了 HTTP 响应。
-    // 这代表“有响应”，不保证页面内容或登录功能正常。
     if (response.status >= 200 && response.status < 500) {
       status = 'up'
       consecutiveFailures = 0
@@ -271,6 +268,8 @@ async function checkWebsite(website, previousHealth) {
       ? 'down'
       : 'unknown'
     errorCode = getFailureCode(error)
+  } finally {
+    responseTimeMs = Math.round(performance.now() - startedAt)
   }
 
   return {
