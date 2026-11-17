@@ -16,6 +16,7 @@
     <!-- 网站图片 -->
     <img
       v-if="isImageUrl && imageStatus !== 'error'"
+      ref="imgRef"
       :key="requestKey"
       :src="normalizedUrl"
       :alt="'logo'"
@@ -49,7 +50,6 @@
     />
   </div>
 </template>
-
 <script setup lang="ts">
 import {
   computed,
@@ -99,6 +99,9 @@ const requestKey = computed(() => {
   return `${normalizedUrl.value}-${retryCount.value}`
 })
 
+// 定义 img 元素的模板引用（安全获取 DOM，避免使用 document.querySelector）
+const imgRef = ref<HTMLImageElement | null>(null)
+
 // 重试定时器
 let retryTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -142,15 +145,13 @@ const handleImageError = () => {
   imageStatus.value = 'error'
 }
 
-// 检查浏览器缓存：如果图片已经被缓存，load 事件可能不会触发，需手动触发
+// 检查浏览器缓存：利用模板引用安全检查 complete 状态
 const checkImageComplete = () => {
   nextTick(() => {
-    const imgEl = document.querySelector(`img[data-request-key="${requestKey.value}"]`) as HTMLImageElement | null
-    if (imgEl && imgEl.complete) {
-      if (imgEl.naturalWidth > 0) {
+    if (imgRef.value && imgRef.value.complete) {
+      if (imgRef.value.naturalWidth > 0) {
         handleImageLoad()
       } else {
-        // 如果 complete 但 naturalWidth 为 0，说明加载损坏
         handleImageError()
       }
     }
