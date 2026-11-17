@@ -90,7 +90,6 @@ import { RESPONSE_STATUS_CODE } from "~/lib/enum";
 import type { TableColumn } from "@nuxt/ui";
 import EditModal from "./components/EditModal.vue";
 import { pick } from "~/lib/utils";
-import type { Column } from "@tanstack/vue-table";
 
 const UBadge = resolveComponent("UBadge");
 const UIcon = resolveComponent("UIcon");
@@ -200,20 +199,6 @@ const handleSuccess = () => {
   handleReset();
 };
 
-function getHeader(column: Column<CategoryList>, label: string, position: "left" | "right") {
-  const isPinned = column.getIsPinned();
-
-  return h(UButton, {
-    color: "neutral",
-    variant: "ghost",
-    label,
-    icon: isPinned ? "i-lucide-pin-off" : "i-lucide-pin",
-    class: "-mx-2.5",
-    onClick() {
-      column.pin(isPinned === position ? false : position);
-    },
-  });
-}
 
 // 列配置项
 const columns: TableColumn<CategoryList>[] = [
@@ -311,11 +296,11 @@ const columns: TableColumn<CategoryList>[] = [
   },
   {
     accessorKey: "actions",
-    header: ({ column }) => h("div", { class: "text-right" }, getHeader(column, "操作", "right")),
+    header: "操作",
     meta: {
       class: {
-        td: "text-center",
-        th: "text-center",
+        td: "text-center !bg-transparent",
+        th: "text-center !bg-transparent",
       },
     },
     cell: ({ row }) => {

@@ -753,8 +753,8 @@ const columns: TableColumn<WebsiteList>[] = [
     header: "操作",
     meta: {
       class: {
-        td: "text-center",
-        th: "text-center",
+        td: "text-center !bg-transparent",
+        th: "text-center !bg-transparent",
       },
     },
     cell: ({ row }) => {
