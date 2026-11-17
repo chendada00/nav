@@ -1,18 +1,26 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex justify-between items-center">
-      <!-- 顶部搜索 -->
-      <div class="flex gap-2">
-        <UInput v-model="name" placeholder="输入站点名称搜索" class="w-60" />
+    <!-- 顶部搜索和操作 -->
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <UInput
+          v-model="name"
+          placeholder="输入站点名称搜索"
+          class="w-60"
+          @keyup.enter="handleSearch"
+        />
+
         <USelect
           v-model="category_id"
-          placeholder="请选择所属分类"
+          placeholder="全部分类"
           value-key="id"
           label-key="name"
           :loading="categoryLoading === 'pending'"
           :items="categoryData?.data?.list || []"
+          :clearable="true"
           class="w-60"
         />
+
         <UButton
           icon="ri:search-line"
           size="md"
@@ -20,8 +28,10 @@
           class="cursor-pointer"
           :loading="status === 'pending'"
           @click="handleSearch"
-          >查询</UButton
         >
+          查询
+        </UButton>
+
         <UButton
           icon="ri:reset-left-line"
           size="md"
@@ -29,8 +39,10 @@
           color="neutral"
           class="cursor-pointer"
           @click="handleReset"
-          >重置</UButton
         >
+          重置
+        </UButton>
+
         <UButton
           icon="ri:add-line"
           size="md"
@@ -38,9 +50,11 @@
           variant="solid"
           class="cursor-pointer"
           @click="handleAdd"
-          >新增</UButton
         >
+          新增
+        </UButton>
       </div>
+
       <!-- 列控制项 -->
       <UDropdownMenu
         :items="
@@ -61,9 +75,16 @@
         "
         :content="{ align: 'end' }"
       >
-        <UButton label="Columns" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down" />
+        <UButton
+          label="Columns"
+          color="neutral"
+          variant="ghost"
+          trailing-icon="i-lucide-chevron-down"
+          class="bg-transparent text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+        />
       </UDropdownMenu>
     </div>
+
     <!-- 表格列表 -->
     <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <UTable
@@ -79,8 +100,25 @@
         }"
       />
     </div>
+
     <!-- 分页 -->
-    <div class="flex justify-center">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-500 dark:text-gray-400">
+          共 {{ data?.data?.total || 0 }} 条
+        </span>
+
+        <USelect
+          :model-value="pageSize"
+          :items="pageSizeOptions"
+          value-key="value"
+          label-key="label"
+          size="sm"
+          class="w-32"
+          @update:model-value="handlePageSizeChange"
+        />
+      </div>
+
       <UPagination
         v-model:page="current"
         :items-per-page="pageSize"
@@ -89,6 +127,7 @@
         @update:page="handlePageChange"
       />
     </div>
+
     <!-- 编辑模态框 -->
     <EditModal
       v-model="showEditModal"
@@ -96,41 +135,164 @@
       :category-list="categoryData?.data?.list || []"
       @success="handleSuccess"
     />
+
+    <!-- 删除确认模态框 -->
+    <UModal
+      v-model:open="showDeleteModal"
+      :dismissible="false"
+      :ui="{
+        content: 'sm:max-w-md',
+        footer: 'justify-end gap-2',
+      }"
+    >
+      <template #content>
+        <div class="p-6">
+          <!-- 图标和标题 -->
+          <div class="flex flex-col items-center text-center">
+            <div
+              class="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40"
+            >
+              <UIcon
+                name="ri:delete-bin-line"
+                class="h-7 w-7 text-red-500"
+              />
+            </div>
+
+            <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+              确认删除网站？
+            </h3>
+
+            <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+              此操作无法撤销，请确认是否删除该网站。
+            </p>
+          </div>
+
+          <!-- 网站信息 -->
+          <div
+            v-if="deleteTarget"
+            class="mt-5 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/60"
+          >
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-gray-700">
+              <UIcon
+                name="ri:global-line"
+                class="h-5 w-5 text-gray-500 dark:text-gray-300"
+              />
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                {{ deleteTarget.name }}
+              </p>
+              <p class="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                {{ deleteTarget.url }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 提示 -->
+          <div class="mt-4 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 dark:bg-red-950/30">
+            <UIcon
+              name="ri:error-warning-line"
+              class="mt-0.5 h-4 w-4 shrink-0 text-red-500"
+            />
+            <p class="text-xs leading-5 text-red-600 dark:text-red-400">
+              删除后，该网站将从导航列表中移除，且无法通过此操作恢复。
+            </p>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="mt-6 flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              :disabled="deleteId !== ''"
+              class="cursor-pointer"
+              @click="closeDeleteModal"
+            >
+              取消
+            </UButton>
+
+            <UButton
+              color="error"
+              variant="solid"
+              icon="ri:delete-bin-line"
+              :loading="deleteId !== ''"
+              :disabled="!deleteTarget || deleteId !== ''"
+              class="cursor-pointer"
+              @click="confirmDelete"
+            >
+              确认删除
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
+
 <script setup lang="ts">
-import type { PageResponse, WebsiteList, Response, WebsiteEdit, CategoryList } from "~/lib/type";
+import type {
+  PageResponse,
+  WebsiteList,
+  Response,
+  WebsiteEdit,
+  CategoryList,
+} from "~/lib/type";
 import { RESPONSE_STATUS_CODE } from "~/lib/enum";
 import type { TableColumn } from "@nuxt/ui";
 import EditModal from "./components/EditModal.vue";
 import { pick } from "~/lib/utils";
 import SiteImage from "~/components/SiteImage/index.vue";
-import type { Column } from "@tanstack/vue-table";
 
 const UBadge = resolveComponent("UBadge");
 const UIcon = resolveComponent("UIcon");
 const UButton = resolveComponent("UButton");
 const UCheckbox = resolveComponent("UCheckbox");
-const deleteId = ref(""); // 删除 id
 
 const dayjs = useDayjs();
+const toast = useToast();
 
 // 请求参数
-const current = ref(1); // 当前页
-const pageSize = ref(10); // 每页条数
-const name = ref(""); // 站点名称
-const category_id = ref(""); // 所属分类
+const current = ref(1);
+const pageSize = ref(10);
+const name = ref("");
+const category_id = ref("");
 
-const toast = useToast();
+// 每页条数选项
+const pageSizeOptions = [
+  { label: "10 条/页", value: 10 },
+  { label: "20 条/页", value: 20 },
+  { label: "50 条/页", value: 50 },
+  { label: "100 条/页", value: 100 },
+];
+
+// 删除状态
+const deleteId = ref("");
+
+// 删除确认弹窗
+const showDeleteModal = ref(false);
+const deleteTarget = ref<WebsiteList | null>(null);
 
 // 从 localStorage 恢复状态
 const restoreState = () => {
   const savedState = localStorage.getItem("websiteFilterStateWebsites");
+
   if (savedState) {
-    const state = JSON.parse(savedState);
-    name.value = state.name || "";
-    category_id.value = state.category_id || "";
-    current.value = state.current || 1;
+    try {
+      const state = JSON.parse(savedState);
+
+      name.value = state.name || "";
+      category_id.value = state.category_id || "";
+      current.value = Math.max(1, Number(state.current) || 1);
+
+      const savedPageSize = Number(state.pageSize);
+
+      pageSize.value = [10, 20, 50, 100].includes(savedPageSize)
+        ? savedPageSize
+        : 10;
+    } catch {
+      localStorage.removeItem("websiteFilterStateWebsites");
+    }
   }
 };
 
@@ -140,71 +302,109 @@ const saveState = () => {
     name: name.value,
     category_id: category_id.value,
     current: current.value,
+    pageSize: pageSize.value,
   };
-  localStorage.setItem("websiteFilterStateWebsites", JSON.stringify(state));
+
+  localStorage.setItem(
+    "websiteFilterStateWebsites",
+    JSON.stringify(state)
+  );
 };
 
-// 页面加载时恢复状态并刷新数据
+// 页面加载时恢复状态
 onMounted(async () => {
   restoreState();
-  await refresh(); // 确保在恢复状态后刷新数据
+  await refresh();
 });
 
 // 状态变化时保存
-watch([name, category_id, current], () => {
+watch([name, category_id, current, pageSize], () => {
   saveState();
 });
 
+// 分类筛选变化时回到第一页
+watch(category_id, () => {
+  current.value = 1;
+});
+
 // 请求分类列表
-const { data: categoryData, status: categoryLoading } = await useFetch<Response<PageResponse<CategoryList>>>(
+const {
+  data: categoryData,
+  status: categoryLoading,
+} = await useFetch<Response<PageResponse<CategoryList>>>(
   "/api/categorys",
   {
-    query: { current: 1, pageSize: 9999 }, // 这里请求全部分类
+    query: { current: 1, pageSize: 9999 },
   }
 );
 
-// 请求列表
-const { data, refresh, status } = await useFetch<Response<PageResponse<WebsiteList>>>("/api/websites", {
-  query: { current, pageSize, name, category_id },
-  watch: [current, pageSize, name, category_id], // 监听这些参数的变化
-  // 处理响应数据
-  onResponse: ({ response }) => {
-    const { code, msg } = response._data;
-    if (code !== RESPONSE_STATUS_CODE.SUCCESS) {
-      toast.add({
-        title: msg,
-      });
-    }
-  },
-});
+// 请求网站列表
+const {
+  data,
+  refresh,
+  status,
+} = await useFetch<Response<PageResponse<WebsiteList>>>(
+  "/api/websites",
+  {
+    query: {
+      current,
+      pageSize,
+      name,
+      category_id,
+    },
+    watch: [current, pageSize, name, category_id],
+    onResponse: ({ response }) => {
+      const { code, msg } = response._data;
+
+      if (code !== RESPONSE_STATUS_CODE.SUCCESS) {
+        toast.add({
+          title: msg,
+        });
+      }
+    },
+  }
+);
 
 // 查询回调
 const handleSearch = async () => {
   current.value = 1;
   await refresh();
-  saveState(); // 查询后保存状态
+  saveState();
 };
 
 // 编辑模态框状态
 const showEditModal = ref(false);
-const currentWebsite = ref<WebsiteEdit | null>();
+const currentWebsite = ref<WebsiteEdit | null>(null);
 
 // 重置回调
 const handleReset = async () => {
   current.value = 1;
   name.value = "";
   category_id.value = "";
-  deleteId.value = "";
   currentWebsite.value = null;
+
   await refresh();
-  saveState(); // 重置后保存状态
+  saveState();
 };
 
 // 分页切换回调
 const handlePageChange = async (page: number) => {
   current.value = page;
   await refresh();
-  saveState(); // 分页后保存状态
+  saveState();
+};
+
+// 修改每页条数
+const handlePageSizeChange = (value: number) => {
+  const newSize = Number(value);
+
+  if (![10, 20, 50, 100].includes(newSize)) {
+    return;
+  }
+
+  pageSize.value = newSize;
+  current.value = 1;
+  saveState();
 };
 
 // 新增回调
@@ -230,42 +430,75 @@ const handleEdit = (category: WebsiteList) => {
     "desc",
     "sort",
   ]);
+
   showEditModal.value = true;
 };
 
-// 删除回调
-const handleDelete = async (id: string) => {
-  deleteId.value = id;
+// 打开删除确认框
+const handleDelete = (website: WebsiteList) => {
+  if (deleteId.value) return;
+
+  deleteTarget.value = website;
+  showDeleteModal.value = true;
+};
+
+// 关闭删除确认框
+const closeDeleteModal = () => {
+  if (deleteId.value) return;
+
+  showDeleteModal.value = false;
+  deleteTarget.value = null;
+};
+
+// 确认删除
+const confirmDelete = async () => {
+  const website = deleteTarget.value;
+
+  if (!website || deleteId.value) return;
+
+  deleteId.value = website.id;
+
   try {
-    await $fetch("/api/websites", {
+    const { code, msg } = await $fetch("/api/websites", {
       method: "DELETE",
-      body: { id },
-    })
-      .then(({ code, msg }) => {
-        if (code === RESPONSE_STATUS_CODE.SUCCESS) {
-          toast.add({
-            title: "删除成功",
-            color: "success",
-            icon: "ri:checkbox-circle-line",
-          });
-          refresh();
-        } else {
-          toast.add({
-            title: msg,
-            color: "error",
-            icon: "ri:close-circle-line",
-          });
-        }
-      })
-      .finally(() => {
-        deleteId.value = "";
+      body: {
+        id: website.id,
+      },
+    });
+
+    if (code === RESPONSE_STATUS_CODE.SUCCESS) {
+      showDeleteModal.value = false;
+      deleteTarget.value = null;
+
+      toast.add({
+        title: "删除成功",
+        color: "success",
+        icon: "ri:checkbox-circle-line",
       });
+
+      // 如果当前页只有一条数据，删除后返回上一页
+      const currentList = data.value?.data?.list || [];
+
+      if (currentList.length === 1 && current.value > 1) {
+        current.value -= 1;
+      }
+
+      await refresh();
+    } else {
+      toast.add({
+        title: msg,
+        color: "error",
+        icon: "ri:close-circle-line",
+      });
+    }
   } catch {
     toast.add({
-      title: "操作失败",
+      title: "删除失败，请稍后重试",
       color: "error",
       icon: "ri:close-circle-line",
     });
+  } finally {
+    deleteId.value = "";
   }
 };
 
@@ -273,21 +506,6 @@ const handleDelete = async (id: string) => {
 const handleSuccess = () => {
   handleReset();
 };
-
-function getHeader(column: Column<WebsiteList>, label: string, position: "left" | "right") {
-  const isPinned = column.getIsPinned();
-
-  return h(UButton, {
-    color: "neutral",
-    variant: "ghost",
-    label,
-    icon: isPinned ? "i-lucide-pin-off" : "i-lucide-pin",
-    class: "-mx-2.5",
-    onClick() {
-      column.pin(isPinned === position ? false : position);
-    },
-  });
-}
 
 // 列配置项
 const columns: TableColumn<WebsiteList>[] = [
@@ -300,7 +518,7 @@ const columns: TableColumn<WebsiteList>[] = [
         th: "text-center",
       },
     },
-    cell: ({ row, column }) => {
+    cell: ({ row }) => {
       return h("div", { class: "flex justify-center gap-2" }, [
         h(
           UBadge,
@@ -312,7 +530,7 @@ const columns: TableColumn<WebsiteList>[] = [
         h(UIcon, {
           name: "ri:share-box-fill",
           class: "cursor-pointer",
-          onClick: () => window.open(row.original.url),
+          onClick: () => window.open(row.original.url, "_blank", "noopener,noreferrer"),
         }),
       ]);
     },
@@ -326,7 +544,13 @@ const columns: TableColumn<WebsiteList>[] = [
         th: "text-center",
       },
     },
-    cell: ({ row }) => h(SiteImage, { url: row.original.logo, size: 32, color: row.original.color, class: "m-auto" }),
+    cell: ({ row }) =>
+      h(SiteImage, {
+        url: row.original.logo,
+        size: 32,
+        color: row.original.color,
+        class: "m-auto",
+      }),
   },
   {
     accessorKey: "tags",
@@ -339,9 +563,10 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     cell: ({ row }) => {
       const tags = row.original?.tags || [];
+
       return h(
         "div",
-        { class: "flex justify-center gap-2" },
+        { class: "flex justify-center gap-2 flex-wrap" },
         tags.map((tag) =>
           h(UBadge, {
             color: "neutral",
@@ -362,8 +587,13 @@ const columns: TableColumn<WebsiteList>[] = [
       },
     },
     cell: ({ row }) => {
-      const categoryName = row.original.ds_categorys.name;
-      return h(UBadge, { variant: "soft", color: "info", label: categoryName });
+      const categoryName = row.original.ds_categorys?.name || "--";
+
+      return h(UBadge, {
+        variant: "soft",
+        color: "info",
+        label: categoryName,
+      });
     },
   },
   {
@@ -386,6 +616,7 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     header: ({ column }) => {
       const isSorted = column.getIsSorted();
+
       return h(UButton, {
         color: "neutral",
         variant: "ghost",
@@ -396,11 +627,19 @@ const columns: TableColumn<WebsiteList>[] = [
             : "i-lucide-arrow-down-wide-narrow"
           : "i-lucide-arrow-up-down",
         class: "-mx-2.5",
-        onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+        onClick: () =>
+          column.toggleSorting(column.getIsSorted() === "asc"),
       });
     },
     cell: ({ row }) => {
-      return h(UBadge, { color: "info", variant: "soft" }, () => row.getValue("sort"));
+      return h(
+        UBadge,
+        {
+          color: "info",
+          variant: "soft",
+        },
+        () => row.getValue("sort")
+      );
     },
   },
   {
@@ -414,8 +653,12 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     cell: ({ row }) => {
       const pinned = row.original.pinned;
+
       return h("div", { class: "flex justify-center" }, [
-        h(UCheckbox, { disabled: true, defaultValue: pinned || "indeterminate" }),
+        h(UCheckbox, {
+          disabled: true,
+          modelValue: !!pinned,
+        }),
       ]);
     },
   },
@@ -430,8 +673,12 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     cell: ({ row }) => {
       const vpn = row.original.vpn;
+
       return h("div", { class: "flex justify-center" }, [
-        h(UCheckbox, { disabled: true, defaultValue: vpn || "indeterminate" }),
+        h(UCheckbox, {
+          disabled: true,
+          modelValue: !!vpn,
+        }),
       ]);
     },
   },
@@ -446,8 +693,12 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     cell: ({ row }) => {
       const recommend = row.original.recommend;
+
       return h("div", { class: "flex justify-center" }, [
-        h(UCheckbox, { disabled: true, defaultValue: recommend || "indeterminate" }),
+        h(UCheckbox, {
+          disabled: true,
+          modelValue: !!recommend,
+        }),
       ]);
     },
   },
@@ -462,8 +713,12 @@ const columns: TableColumn<WebsiteList>[] = [
     },
     cell: ({ row }) => {
       const commonlyUsed = row.original.commonlyUsed;
+
       return h("div", { class: "flex justify-center" }, [
-        h(UCheckbox, { disabled: true, defaultValue: commonlyUsed || "indeterminate" }),
+        h(UCheckbox, {
+          disabled: true,
+          modelValue: !!commonlyUsed,
+        }),
       ]);
     },
   },
@@ -476,7 +731,8 @@ const columns: TableColumn<WebsiteList>[] = [
         th: "text-center",
       },
     },
-    cell: ({ row }) => dayjs(row.original.created_at).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) =>
+      dayjs(row.original.created_at).format("YYYY-MM-DD HH:mm:ss"),
   },
   {
     accessorKey: "updated_at",
@@ -487,11 +743,14 @@ const columns: TableColumn<WebsiteList>[] = [
         th: "text-center",
       },
     },
-    cell: ({ row }) => dayjs(row.original.updated_at).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) =>
+      row.original.updated_at
+        ? dayjs(row.original.updated_at).format("YYYY-MM-DD HH:mm:ss")
+        : "--",
   },
   {
     accessorKey: "actions",
-    header: ({ column }) => h("div", { class: "text-right" }, getHeader(column, "操作", "right")),
+    header: "操作",
     meta: {
       class: {
         td: "text-center",
@@ -517,16 +776,17 @@ const columns: TableColumn<WebsiteList>[] = [
           label: "删除",
           loading: row.original.id === deleteId.value,
           class: "cursor-pointer",
-          onClick: () => handleDelete(row.original.id),
+          onClick: () => handleDelete(row.original),
         }),
       ]);
     },
   },
 ];
 
+// 表格实例
 const table = useTemplateRef("table");
 
-// 列固定
+// 操作列固定在右侧，不提供手动切换入口
 const columnPinning = ref({
   left: [],
   right: ["actions"],
@@ -538,7 +798,7 @@ const columnVisibility = ref({
   updated_at: false,
 });
 
-// 这里要做个映射
+// 列名称映射
 const columnVisibilityMap: Record<string, string> = reactive({
   name: "站点名称",
   logo: "Logo",
