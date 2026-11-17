@@ -56,6 +56,7 @@ import {
   ref,
   watch,
   onBeforeUnmount,
+  nextTick,
 } from 'vue'
 
 type Props = {
@@ -109,28 +110,14 @@ const clearRetryTimer = () => {
   }
 }
 
-// 判断事件是否属于当前图片请求
-const isCurrentRequest = (event: Event) => {
-  const img = event.currentTarget as HTMLImageElement | null
-
-  return !!img &&
-    img.dataset.requestKey === requestKey.value &&
-    img.isConnected
-}
-
 // 图片加载成功
-const handleImageLoad = (event: Event) => {
-  if (!isCurrentRequest(event)) return
-
+const handleImageLoad = () => {
   clearRetryTimer()
-
   imageStatus.value = 'loaded'
 }
 
 // 图片加载失败
-const handleImageError = (event: Event) => {
-  if (!isCurrentRequest(event)) return
-
+const handleImageError = () => {
   clearRetryTimer()
 
   // 最多重试两次
@@ -142,7 +129,6 @@ const handleImageError = (event: Event) => {
     retryTimer = setTimeout(() => {
       retryTimer = undefined
 
-      // 防止旧图片的重试任务影响新图片
       if (normalizedUrl.value !== currentUrl) return
 
       imageStatus.value = 'loading'
@@ -156,17 +142,37 @@ const handleImageError = (event: Event) => {
   imageStatus.value = 'error'
 }
 
+// 检查浏览器缓存：如果图片已经被缓存，load 事件可能不会触发，需手动触发
+const checkImageComplete = () => {
+  nextTick(() => {
+    const imgEl = document.querySelector(`img[data-request-key="${requestKey.value}"]`) as HTMLImageElement | null
+    if (imgEl && imgEl.complete) {
+      if (imgEl.naturalWidth > 0) {
+        handleImageLoad()
+      } else {
+        // 如果 complete 但 naturalWidth 为 0，说明加载损坏
+        handleImageError()
+      }
+    }
+  })
+}
+
 // 图片地址变化时，重置所有状态
 watch(
   normalizedUrl,
   () => {
     clearRetryTimer()
-
     retryCount.value = 0
     imageStatus.value = 'loading'
+    checkImageComplete()
   },
   { immediate: true }
 )
+
+// 重试时也检查一遍缓存
+watch(retryCount, () => {
+  checkImageComplete()
+})
 
 // 组件销毁时清理定时器
 onBeforeUnmount(() => {
