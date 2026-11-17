@@ -1,5 +1,3 @@
-
-
 <template>
   <div
     class="site-image"
@@ -8,23 +6,27 @@
       height: `${size}px`,
     }"
   >
-    <!-- 加载骨架 -->
+    <!-- 图片加载动画 -->
     <div
-      v-if="isImageUrl && !imageLoaded && !imageError"
+      v-if="isImageUrl && imageStatus === 'loading'"
       class="site-image-skeleton"
     />
 
     <!-- 网站图片 -->
     <img
-      v-if="isImageUrl && !imageError"
-      :key="`${normalizedUrl}-${retryCount}`"
+      v-if="isImageUrl && imageStatus !== 'error'"
+      :key="requestKey"
       :src="normalizedUrl"
       :alt="'logo'"
       :width="size"
       :height="size"
       :loading="loading"
       decoding="async"
-      :class="['site-image-img', { 'is-loaded': imageLoaded }]"
+      :data-request-key="requestKey"
+      :class="[
+        'site-image-img',
+        { 'is-loaded': imageStatus === 'loaded' }
+      ]"
       @load="handleImageLoad"
       @error="handleImageError"
     />
@@ -37,16 +39,15 @@
       :style="{ color }"
     />
 
-    <!-- 加载失败备用图标 -->
+    <!-- 图片加载失败备用图标 -->
     <UIcon
-      v-else-if="normalizedUrl && imageError"
+      v-else-if="normalizedUrl && imageStatus === 'error'"
       name="i-lucide-globe"
       :size="String(size)"
       :style="{ color: color || '#94a3b8' }"
     />
   </div>
 </template>
-
 
 <script setup lang="ts">
 import {
@@ -63,13 +64,6 @@ type Props = {
   loading?: 'lazy' | 'eager'
 }
 
-const imageLoaded = ref(false)
-
-// 图片加载成功
-const handleImageLoad = () => {
-  imageLoaded.value = true
-}
-
 const props = withDefaults(defineProps<Props>(), {
   url: '',
   size: 40,
@@ -83,7 +77,6 @@ const normalizedUrl = computed(() => {
 })
 
 // 判断是否为图片地址
-// 不再要求 URL 必须带 jpg、png、ico 等扩展名
 const isImageUrl = computed(() => {
   const url = normalizedUrl.value
 
@@ -91,16 +84,23 @@ const isImageUrl = computed(() => {
     url.startsWith('/')
 })
 
-// 图片加载失败状态
-const imageError = ref(false)
+// 图片状态
+type ImageStatus = 'loading' | 'loaded' | 'error'
 
-// 已经重试次数
+const imageStatus = ref<ImageStatus>('loading')
+
+// 已重试次数
 const retryCount = ref(0)
+
+// 当前图片请求标识
+const requestKey = computed(() => {
+  return `${normalizedUrl.value}-${retryCount.value}`
+})
 
 // 重试定时器
 let retryTimer: ReturnType<typeof setTimeout> | undefined
 
-// 清除重试定时器
+// 清理定时器
 const clearRetryTimer = () => {
   if (retryTimer) {
     clearTimeout(retryTimer)
@@ -108,37 +108,64 @@ const clearRetryTimer = () => {
   }
 }
 
-// 图片加载失败处理
-const handleImageError = () => {
+// 判断事件是否属于当前图片请求
+const isCurrentRequest = (event: Event) => {
+  const img = event.currentTarget as HTMLImageElement | null
+
+  return !!img &&
+    img.dataset.requestKey === requestKey.value &&
+    img.isConnected
+}
+
+// 图片加载成功
+const handleImageLoad = (event: Event) => {
+  if (!isCurrentRequest(event)) return
+
+  clearRetryTimer()
+
+  imageStatus.value = 'loaded'
+}
+
+// 图片加载失败
+const handleImageError = (event: Event) => {
+  if (!isCurrentRequest(event)) return
+
   clearRetryTimer()
 
   // 最多重试两次
   if (retryCount.value < 2) {
     const nextRetry = retryCount.value + 1
+    const currentUrl = normalizedUrl.value
 
-    // 延迟重试，避免连续请求
+    // 延迟重试：800ms、1600ms
     retryTimer = setTimeout(() => {
-      // 新一轮重试开始，重新显示加载动画
-      imageLoaded.value = false
-
-      retryCount.value = nextRetry
       retryTimer = undefined
+
+      // 防止旧图片的重试任务影响新图片
+      if (normalizedUrl.value !== currentUrl) return
+
+      imageStatus.value = 'loading'
+      retryCount.value = nextRetry
     }, nextRetry * 800)
 
     return
   }
 
   // 多次失败后显示备用图标
-  imageError.value = true
+  imageStatus.value = 'error'
 }
 
-// 图片地址变化时，重置状态
-watch(normalizedUrl, () => {
-  clearRetryTimer()
-  retryCount.value = 0
-  imageError.value = false
-  imageLoaded.value = false
-})
+// 图片地址变化时，重置所有状态
+watch(
+  normalizedUrl,
+  () => {
+    clearRetryTimer()
+
+    retryCount.value = 0
+    imageStatus.value = 'loading'
+  },
+  { immediate: true }
+)
 
 // 组件销毁时清理定时器
 onBeforeUnmount(() => {
@@ -160,32 +187,37 @@ onBeforeUnmount(() => {
 .site-image-skeleton {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: 10px;
+
   background: linear-gradient(
     110deg,
     rgba(148, 163, 184, 0.08) 25%,
     rgba(148, 163, 184, 0.2) 50%,
     rgba(148, 163, 184, 0.08) 75%
   );
+
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
-/* 图片默认透明 */
+/* 图片默认隐藏 */
 .site-image-img {
   position: relative;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
+
   opacity: 0;
   transform: scale(0.92);
+
   transition:
     opacity 0.35s ease,
     transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* 加载完成后淡入 */
+/* 图片加载成功后淡入 */
 .site-image-img.is-loaded {
   opacity: 1;
   transform: scale(1);
@@ -196,12 +228,13 @@ onBeforeUnmount(() => {
   0% {
     background-position: 100% 0;
   }
+
   100% {
     background-position: -100% 0;
   }
 }
 
-/* 尊重系统减少动态效果设置 */
+/* 减少动态效果 */
 @media (prefers-reduced-motion: reduce) {
   .site-image-skeleton {
     animation: none;
@@ -209,6 +242,7 @@ onBeforeUnmount(() => {
 
   .site-image-img {
     transition: none;
+    transform: none;
   }
 }
 </style>
