@@ -118,14 +118,6 @@ const getCurrentImage = (event: Event) => {
     return null
   }
 
-  if (target !== imgRef.value) {
-    return null
-  }
-
-  if (target.dataset.src !== normalizedUrl.value) {
-    return null
-  }
-
   return target
 }
 
@@ -135,12 +127,14 @@ const getCurrentImage = (event: Event) => {
 const handleImageLoad = (event: Event) => {
   const img = getCurrentImage(event)
 
-  if (!img) return
+  if (!img || img.naturalWidth <= 0) {
+    console.warn('[SiteImage] load事件触发，但图片无效', img)
+    return
+  }
 
-  if (img.naturalWidth <= 0) return
+  console.log('[SiteImage] 图片加载成功:', img.src)
 
   clearRetryTimer()
-
   imageStatus.value = 'loaded'
 }
 
@@ -152,9 +146,10 @@ const handleImageError = (event: Event) => {
 
   if (!img) return
 
+  console.error('[SiteImage] 图片加载失败:', img.src)
+
   clearRetryTimer()
 
-  // 最多重试两次
   if (retryCount.value < 2) {
     const currentUrl = normalizedUrl.value
     const nextRetry = retryCount.value + 1
@@ -162,7 +157,6 @@ const handleImageError = (event: Event) => {
     retryTimer = setTimeout(() => {
       retryTimer = undefined
 
-      // URL 已改变，放弃旧重试
       if (normalizedUrl.value !== currentUrl) {
         return
       }
