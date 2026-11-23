@@ -1,4 +1,3 @@
-
 <template>
   <div
     class="site-image"
@@ -7,24 +6,24 @@
       height: `${size}px`,
     }"
   >
-    <!-- 图片加载动画 -->
+    <!-- 加载动画 -->
     <div
       v-if="isImageUrl && imageStatus === 'loading'"
       class="site-image-skeleton"
     />
 
-    <!-- 网站图片 -->
+    <!-- 图片 -->
     <img
       v-if="isImageUrl && imageStatus !== 'error'"
       ref="imgRef"
-      :key="requestKey"
+      :key="imageKey"
       :src="normalizedUrl"
+      :data-src="normalizedUrl"
       alt="logo"
       :width="size"
       :height="size"
       :loading="loading"
       decoding="async"
-      :data-request-key="requestKey"
       :class="[
         'site-image-img',
         { 'is-loaded': imageStatus === 'loaded' }
@@ -33,7 +32,7 @@
       @error="handleImageError"
     />
 
-    <!-- Iconify 图标 -->
+    <!-- Iconify -->
     <UIcon
       v-else-if="normalizedUrl && !isImageUrl"
       :name="normalizedUrl"
@@ -41,7 +40,7 @@
       :style="{ color }"
     />
 
-    <!-- 图片加载失败备用图标 -->
+    <!-- 图片加载失败 -->
     <UIcon
       v-else-if="normalizedUrl && imageStatus === 'error'"
       name="i-lucide-globe"
@@ -74,39 +73,33 @@ const props = withDefaults(defineProps<Props>(), {
   loading: 'lazy',
 })
 
-// 标准化图片地址
 const normalizedUrl = computed(() => {
   return props.url?.trim() || ''
 })
 
-// 判断是否为图片地址
 const isImageUrl = computed(() => {
   const url = normalizedUrl.value
 
-  return /^https?:\/\//i.test(url) ||
-    url.startsWith('/')
+  return /^https?:\/\//i.test(url) || url.startsWith('/')
 })
 
-// 图片状态
 type ImageStatus = 'loading' | 'loaded' | 'error'
 
 const imageStatus = ref<ImageStatus>('loading')
-
-// 已重试次数
 const retryCount = ref(0)
 
-// 当前图片请求标识
-const requestKey = computed(() => {
-  return `${normalizedUrl.value}-${retryCount.value}`
+/**
+ * 图片实例标识
+ * URL + 重试次数
+ */
+const imageKey = computed(() => {
+  return `${normalizedUrl.value}_${retryCount.value}`
 })
 
-// 图片 DOM 引用
 const imgRef = ref<HTMLImageElement | null>(null)
 
-// 重试定时器
 let retryTimer: ReturnType<typeof setTimeout> | undefined
 
-// 清理定时器
 const clearRetryTimer = () => {
   if (retryTimer) {
     clearTimeout(retryTimer)
@@ -114,87 +107,93 @@ const clearRetryTimer = () => {
   }
 }
 
-// 校验事件是否属于当前图片请求
-const isCurrentRequest = (event: Event) => {
+/**
+ * 获取当前事件图片
+ * 只校验 DOM 实例和图片地址
+ */
+const getCurrentImage = (event: Event) => {
   const target = event.target
 
   if (!(target instanceof HTMLImageElement)) {
-    return false
+    return null
   }
 
-  // 必须是当前图片 DOM
   if (target !== imgRef.value) {
-    return false
+    return null
   }
 
-  // 必须是当前请求标识
-  if (target.dataset.requestKey !== requestKey.value) {
-    return false
+  if (target.dataset.src !== normalizedUrl.value) {
+    return null
   }
 
-  // 必须是当前图片地址
-  if (target.src !== target.currentSrc && target.currentSrc) {
-    // currentSrc 可能是浏览器实际选择的资源地址
-    // 不通过 currentSrc 判断 URL 是否相同
-  }
-
-  return true
+  return target
 }
 
-// 图片加载成功
+/**
+ * 图片加载成功
+ */
 const handleImageLoad = (event: Event) => {
-  if (!isCurrentRequest(event)) return
+  const img = getCurrentImage(event)
 
-  const target = event.target as HTMLImageElement
+  if (!img) return
 
-  // 避免异常的空图片进入成功状态
-  if (target.naturalWidth <= 0) return
+  if (img.naturalWidth <= 0) return
 
   clearRetryTimer()
+
   imageStatus.value = 'loaded'
 }
 
-// 图片加载失败
+/**
+ * 图片加载失败
+ */
 const handleImageError = (event: Event) => {
-  if (!isCurrentRequest(event)) return
+  const img = getCurrentImage(event)
+
+  if (!img) return
 
   clearRetryTimer()
 
   // 最多重试两次
   if (retryCount.value < 2) {
-    const nextRetry = retryCount.value + 1
     const currentUrl = normalizedUrl.value
-    const currentKey = requestKey.value
+    const nextRetry = retryCount.value + 1
 
-    // 延迟重试：800ms、1600ms
     retryTimer = setTimeout(() => {
       retryTimer = undefined
 
-      // 防止旧请求重试影响新的图片
-      if (normalizedUrl.value !== currentUrl) return
-      if (requestKey.value !== currentKey) return
+      // URL 已改变，放弃旧重试
+      if (normalizedUrl.value !== currentUrl) {
+        return
+      }
 
-      imageStatus.value = 'loading'
       retryCount.value = nextRetry
+      imageStatus.value = 'loading'
     }, nextRetry * 800)
 
     return
   }
 
-  // 多次失败后显示备用图标
   imageStatus.value = 'error'
 }
 
-// 检查浏览器缓存中的成功图片
-const checkCachedImage = () => {
+/**
+ * 检查已经完成的图片
+ *
+ * 这里只把确定成功的图片切换为 loaded
+ * 不使用 complete && naturalWidth === 0
+ * 判断失败，避免干扰懒加载
+ */
+const checkImageLoaded = () => {
   nextTick(() => {
     const img = imgRef.value
 
     if (!img) return
-    if (img.dataset.requestKey !== requestKey.value) return
 
-    // 只确认成功的缓存图片
-    // 不使用 naturalWidth === 0 推断失败
+    if (img.dataset.src !== normalizedUrl.value) {
+      return
+    }
+
     if (img.complete && img.naturalWidth > 0) {
       clearRetryTimer()
       imageStatus.value = 'loaded'
@@ -202,28 +201,34 @@ const checkCachedImage = () => {
   })
 }
 
-// 图片地址变化时，重置所有状态
+/**
+ * URL变化时重置状态
+ */
 watch(
   normalizedUrl,
   () => {
     clearRetryTimer()
+
     retryCount.value = 0
     imageStatus.value = 'loading'
 
-    checkCachedImage()
+    checkImageLoaded()
   },
-  { immediate: true }
+  {
+    immediate: true,
+  },
 )
 
-// 重试次数变化后，检查缓存命中
-watch(
-  retryCount,
-  () => {
-    checkCachedImage()
-  }
-)
+/**
+ * 重试后检查图片缓存
+ */
+watch(retryCount, () => {
+  checkImageLoaded()
+})
 
-// 组件销毁时清理定时器
+/**
+ * 组件销毁
+ */
 onBeforeUnmount(() => {
   clearRetryTimer()
 })
@@ -239,7 +244,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* 加载骨架 */
+/* 加载动画 */
 .site-image-skeleton {
   position: absolute;
   inset: 0;
@@ -273,7 +278,7 @@ onBeforeUnmount(() => {
     transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* 图片加载成功后淡入 */
+/* 加载完成 */
 .site-image-img.is-loaded {
   opacity: 1;
   transform: scale(1);
